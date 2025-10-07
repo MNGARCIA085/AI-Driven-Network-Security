@@ -17,10 +17,10 @@ def main(cfg: DictConfig):
     print(f"Data prepared for model type: {cfg.preprocessor.model_type}")
     
     if cfg.preprocessor.model_type.lower() in ['nn', 'neural', 'neuralnet']:
-        train_loader, val_loader = data
+        train_loader, val_loader, artifacts = data
         print(f"Train batches: {len(train_loader)}, Val batches: {len(val_loader)}")
     else:
-        X_train, X_val, y_train, y_val = data
+        X_train, X_val, y_train, y_val, artifacts = data
         print(f"Train samples: {X_train.shape[0]}, Val samples: {X_val.shape[0]}")
 
 if __name__ == "__main__":

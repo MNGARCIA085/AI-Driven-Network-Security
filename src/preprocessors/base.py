@@ -77,6 +77,15 @@ class BasePreprocessor(ABC):
             raise ValueError("Call split_features() and encode_labels() first!") # after combine rare attacks and encode!!!
         return len(np.unique(self.y_train))
 
+    # for later logging
+    def get_artifacts(self):
+        """Return objects for logging or serialization."""
+        return {
+            "scaler": self.scaler,
+            "encoder": self.label_encoder,
+            "features": self.features,
+        }
+
     @abstractmethod
     def preprocess(self):
         pass

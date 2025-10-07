@@ -209,3 +209,8 @@ __marimo__/
 
 # data (too heavy)
 data/
+
+
+# Hydra outputs
+outputs/
+multirun/

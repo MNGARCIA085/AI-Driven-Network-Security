@@ -44,4 +44,5 @@ class NNPreprocessor(BasePreprocessor):
 
     def preprocess(self):
         self.load_data().encode_labels().split_features().apply_smote().scale_features()
-        return self.get_dataloaders()
+        train_loader, val_loader = self.get_dataloaders()
+        return train_loader, val_loader, self.get_artifacts()

@@ -19,12 +19,22 @@ def main(cfg: DictConfig):
     print(f"Data prepared for model type: {cfg.preprocessor.model_type}")
 
     if cfg.preprocessor.model_type.lower() in ['nn', 'neural', 'neuralnet']:
-        train_loader, val_loader = data
+        train_loader, val_loader, artifacts = data
         print(f"Train batches: {len(train_loader)}, Val batches: {len(val_loader)}")
 
         # -----------------------------
         # Model
         # -----------------------------
+
+        print(artifacts)
+
+        print(artifacts['scaler'].mean_)
+
+        # classes
+        print("Classes:", artifacts['encoder'].classes_)
+        #print("Encoded values:", y_encoded[:10])
+
+        print(artifacts['features'])
 
         input_size = preprocessor.input_size
         num_classes = preprocessor.num_classes
@@ -44,7 +54,7 @@ def main(cfg: DictConfig):
         # -----------------------------
         # Training loop
         # -----------------------------
-        num_epochs = 3
+        num_epochs = 2
 
         for epoch in range(num_epochs):
             model.train()
