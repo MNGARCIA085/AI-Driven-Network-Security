@@ -2,8 +2,5 @@
 path: "data/train_val_data.csv"
 features: null  # list of features or null for all
 model_type: "nn"  # nn, tree, rf, xgboost, etc.
-do_smote: true
-smote_strategy: 0.3
-batch_size: 64
 val_size: 0.2
-random_state: 42
+

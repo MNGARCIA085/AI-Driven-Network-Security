@@ -2,8 +2,8 @@ defaults:
   - preprocessor: preprocessor
 
 
-seed: 42
-batch_size: 32
+random_state: 42
+batch_size: 64
 experiment_name: breast_cancer_nn
 
 

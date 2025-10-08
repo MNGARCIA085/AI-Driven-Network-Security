@@ -5,5 +5,5 @@ class TreePreprocessor(BasePreprocessor):
     # an init with **kwargs to handle extyra values maybe
 
     def preprocess(self):
-        self.load_data().encode_labels().split_features().apply_smote()
+        self.load_data().basic_preprocessing().combine_rare_labels().encode_labels().split_features().apply_smote()
         return self.X_train.values, self.X_val.values, self.y_train.values, self.y_val.values,self.get_artifacts()

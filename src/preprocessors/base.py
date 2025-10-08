@@ -1,33 +1,45 @@
 from abc import ABC, abstractmethod
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler, MinMaxScaler, RobustScaler, Normalizer
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
 
 
-
-
 class BasePreprocessor(ABC):
-    def __init__(self, path, features=None, do_smote=True, smote_strategy=0.3,
-                 val_size=0.2, random_state=42):
+    def __init__(self, path, features=None, batch_size=64, balance_factor=0.2,
+                 val_size=0.2, random_state=42, scaler_type="standard"):
         self.path = path
         self.features = features
-        self.do_smote = do_smote
-        self.smote_strategy = smote_strategy
+        self.batch_size = batch_size
+        self.balance_factor = balance_factor
         self.val_size = val_size
         self.random_state = random_state
-        
+        self.scaler_type = scaler_type  # 'standard', 'minmax', 'robust', 'none'
+        self.scaler = None
+
+        # Data placeholders
         self.df = None
-        self.X_train, self.X_val = None, None
-        self.y_train, self.y_val = None, None
+        self.X_train = self.X_val = None
+        self.y_train = self.y_val = None
         self.label_encoder = None
 
+        # Internal logging
+        self._class_dist_before_smote = None
+        self._class_dist_after_smote = None
 
-    # load data and basic preprocessing
+
+    # ---------------------------
+    # 1. Load and clean
+    # ---------------------------
     def load_data(self):
-        df = pd.read_csv(self.path)
-        df = df.drop_duplicates().dropna()
+        """Load raw data from CSV."""
+        self.df = pd.read_csv(self.path)
+        return self
+
+    def basic_preprocessing(self):
+        """Remove duplicates, NaNs, and infinities."""
+        df = self.df.drop_duplicates().dropna()
         df.replace([np.inf, -np.inf], np.nan, inplace=True)
         df = df.dropna()
         if self.features:
@@ -36,18 +48,31 @@ class BasePreprocessor(ABC):
         return self
 
 
-    def encode_labels(self, rare_attacks=None):
+    # ---------------------------
+    # 2. Label handling
+    # ---------------------------
+    def combine_rare_labels(self, rare_attacks=None):
+        """Group rare classes under a single label."""
         if rare_attacks is None:
             rare_attacks = ['Bot', 'Web Attack � Brute Force', 'Web Attack � XSS']
         df = self.df.copy()
         df['Label'] = df['Label'].apply(lambda x: 'Other_Attack' if x in rare_attacks else x)
-        le = LabelEncoder()
-        df['Label'] = le.fit_transform(df['Label'])
         self.df = df
+        return self
+
+    def encode_labels(self):
+        """Encode target labels to integers."""
+        le = LabelEncoder()
+        self.df['Label'] = le.fit_transform(self.df['Label'])
         self.label_encoder = le
         return self
 
+
+    # ---------------------------
+    # 3. Split
+    # ---------------------------
     def split_features(self):
+        """Split dataset into train/validation."""
         X = self.df.drop('Label', axis=1)
         y = self.df['Label']
         X_train, X_val, y_train, y_val = train_test_split(
@@ -57,14 +82,39 @@ class BasePreprocessor(ABC):
         self.y_train, self.y_val = y_train, y_val
         return self
 
+
+    # ---------------------------
+    # 4. SMOTE oversampling
+    # ---------------------------
     def apply_smote(self):
-        if self.do_smote:
-            smote = SMOTE(sampling_strategy='auto', random_state=self.random_state) # change later!!!
-            X_res, y_res = smote.fit_resample(self.X_train, self.y_train)
-            self.X_train, self.y_train = X_res, y_res
+        """Apply SMOTE with balance_factor ∈ [0,1]."""
+        if self.balance_factor <= 0:
+            return self
+
+
+        #self._class_dist_before_smote = self.y_train.value_counts().to_dict()
+        #self._class_dist_after_smote = pd.Series(y_res).value_counts().to_dict()
+
+        class_counts = self.y_train.value_counts()
+        self._class_dist_before_smote = class_counts.to_dict()
+
+        max_count = class_counts.max()
+        sampling_strategy = {
+            cls: int(count + (max_count - count) * self.balance_factor)
+            for cls, count in class_counts.items()
+        }
+
+        smote = SMOTE(sampling_strategy=sampling_strategy, random_state=self.random_state)
+        X_res, y_res = smote.fit_resample(self.X_train, self.y_train)
+
+        self._class_dist_after_smote = pd.Series(y_res).value_counts().to_dict()
+        self.X_train, self.y_train = X_res, y_res
         return self
 
 
+    # ---------------------------
+    # 5. Properties
+    # ---------------------------
     @property
     def input_size(self):
         if self.X_train is None:
@@ -74,18 +124,60 @@ class BasePreprocessor(ABC):
     @property
     def num_classes(self):
         if self.y_train is None:
-            raise ValueError("Call split_features() and encode_labels() first!") # after combine rare attacks and encode!!!
+            raise ValueError(
+                "Call combine_rare_labels(), encode_labels(), and split_features() first!"
+            )
         return len(np.unique(self.y_train))
 
-    # for later logging
+
+    # ---------------------------
+    # 6. Logging / artifacts
+    # ---------------------------
     def get_artifacts(self):
-        """Return objects for logging or serialization."""
+        """Return all key artifacts and metadata for logging."""
         return {
+            "features": self.features,
+            "scaler_type": self.scaler_type,
             "scaler": self.scaler,
             "encoder": self.label_encoder,
-            "features": self.features,
+            "input_size": getattr(self, "input_size", None),
+            "num_classes": getattr(self, "num_classes", None),
+            "balance_factor": self.balance_factor,
+            "val_size": self.val_size,
+            "random_state": self.random_state,
+            "class_dist_before_smote": self._class_dist_before_smote,
+            "class_dist_after_smote": self._class_dist_after_smote,
+            "train_shape": None if self.X_train is None else self.X_train.shape,
+            "val_shape": None if self.X_val is None else self.X_val.shape,
         }
 
+
+    # ---------------------------
+    # 7. Abstract method
+    # ---------------------------
     @abstractmethod
     def preprocess(self):
+        """Subclasses implement their own full preprocessing pipeline."""
         pass
+
+
+
+
+"""
+import mlflow
+
+artifacts = pre.get_artifacts()
+
+with mlflow.start_run():
+    # Log numeric and string metadata
+    mlflow.log_param("balance_factor", artifacts["balance_factor"])
+    mlflow.log_param("val_size", artifacts["val_size"])
+    
+    # Log class distributions as JSON
+    mlflow.log_dict(artifacts["class_dist_before_smote"], "class_dist_before_smote.json")
+    mlflow.log_dict(artifacts["class_dist_after_smote"], "class_dist_after_smote.json")
+    
+    # Optionally log shapes
+    mlflow.log_param("train_shape", str(artifacts["train_shape"]))
+    mlflow.log_param("val_shape", str(artifacts["val_shape"]))
+"""
