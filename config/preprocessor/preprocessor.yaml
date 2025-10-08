@@ -1,6 +1,8 @@
-# configs/preprocessor.yaml
 path: "data/train_val_data.csv"
 features: null  # list of features or null for all
-model_type: "nn"  # nn, tree, rf, xgboost, etc.
+balance_factor: 0.2
 val_size: 0.2
+scaler_type: "standard"
+
+
 

@@ -1,8 +1,32 @@
 from .nn_preprocessor import NNPreprocessor
 from .tree_preprocessor import TreePreprocessor
+from omegaconf import DictConfig
 
 
 
+
+
+class PreprocessorFactory:
+    @staticmethod
+    def get_preprocessor(global_cfg, pre_cfg):
+        """
+        global_cfg: main experiment config (cfg), contains global params like random_seed
+        pre_cfg: preprocessing config (cfg.preprocessor)
+        """
+        model_type = getattr(global_cfg, "model_type", "nn")  # default to nn
+
+        if model_type == "nn":
+            return NNPreprocessor(global_cfg, pre_cfg)
+        elif model_type in ["tree", "rf"]:
+            return TreePreprocessor(global_cfg, pre_cfg)
+        else:
+            raise ValueError(f"Unknown model_type: {model_type}")
+
+
+
+
+
+"""
 class PreprocessorFactory:
     @staticmethod
     def get_preprocessor(model_type, **kwargs):
@@ -13,26 +37,8 @@ class PreprocessorFactory:
             return TreePreprocessor(**kwargs)
         else:
             raise ValueError(f"Unknown model type '{model_type}'")
+"""
 
-"""
-safest way
-class PreprocessorFactory:
-    @staticmethod
-    def get_preprocessor(model_type: str, cfg: DictConfig):
-        model_type = model_type.lower()
-        if model_type in ["nn", "neuralnet"]:
-            from .nn_preprocessor import NNPreprocessor
-            return NNPreprocessor(
-                batch_size=cfg.batch_size,
-                val_size=cfg.val_size,
-                random_state=cfg.random_state
-            )
-        elif model_type in ["tree", "rf"]:
-            from .tree_preprocessor import TreePreprocessor
-            return TreePreprocessor(
-                do_smote=cfg.do_smote,
-                smote_strategy=cfg.smote_strategy
-            )
-        else:
-            raise ValueError(f"Unknown model type {model_type}")
-"""
+
+
+

@@ -4,10 +4,17 @@ import torch
 from torch.utils.data import TensorDataset, DataLoader
 import pandas as pd
 
-class NNPreprocessor(BasePreprocessor):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
+
+
+
+
+
+class NNPreprocessor(BasePreprocessor):
+    def __init__(self, global_cfg, pre_cfg):
+        super().__init__(global_cfg, pre_cfg)
+        # NN-specific scaler type from pre_cfg
+        #self.scaler_type = getattr(pre_cfg, "scaler_type", "standard")
 
     def scale_features(self):
         if self.scaler_type == "none":

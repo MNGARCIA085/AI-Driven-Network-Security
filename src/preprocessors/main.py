@@ -8,15 +8,15 @@ from src.preprocessors.factory import PreprocessorFactory
 @hydra.main(config_path="../../config", config_name="config", version_base=None)
 def main(cfg: DictConfig):
 
-    
-    preprocessor = PreprocessorFactory.get_preprocessor(**cfg.preprocessor) #model_type=cfg.preprocessor.model_type, 
-    
+    # get preprocessor    
+    preprocessor = PreprocessorFactory.get_preprocessor(cfg, cfg.preprocessor) # e.g. NNPreprocessor
 
-    data = preprocessor.preprocess() # e.g. NNPreprocessor
+    # preprocess
+    data = preprocessor.preprocess() 
     
-    print(f"Data prepared for model type: {cfg.preprocessor.model_type}")
+    print(f"Data prepared for model type: {cfg.model_type}")
     
-    if cfg.preprocessor.model_type.lower() in ['nn', 'neural', 'neuralnet']:
+    if cfg.model_type.lower() in ['nn', 'neural', 'neuralnet']:
         train_loader, val_loader, artifacts = data # i might not need artifacts here if i use it like later
         print(f"Train batches: {len(train_loader)}, Val batches: {len(val_loader)}")
     else:

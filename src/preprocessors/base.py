@@ -7,15 +7,20 @@ from imblearn.over_sampling import SMOTE
 
 
 class BasePreprocessor(ABC):
-    def __init__(self, path, features=None, batch_size=64, balance_factor=0.2,
+    
+    def __init__(self, global_cfg, pre_cfg):
+        """
+        path, features=None, batch_size=64, balance_factor=0.2,
                  val_size=0.2, random_state=42, scaler_type="standard"):
-        self.path = path
-        self.features = features
-        self.batch_size = batch_size
-        self.balance_factor = balance_factor
-        self.val_size = val_size
-        self.random_state = random_state
-        self.scaler_type = scaler_type  # 'standard', 'minmax', 'robust', 'none'
+        """
+
+        self.path = pre_cfg.path
+        self.features = pre_cfg.features
+        self.batch_size = global_cfg.batch_size
+        self.balance_factor = pre_cfg.balance_factor
+        self.val_size = pre_cfg.val_size
+        self.random_state = global_cfg.random_state
+        self.scaler_type = pre_cfg.scaler_type  # 'standard', 'minmax', 'robust', 'none'
         self.scaler = None
 
         # Data placeholders
