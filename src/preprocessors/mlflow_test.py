@@ -1,7 +1,7 @@
 import hydra
 from omegaconf import DictConfig
 from src.preprocessors.factory import PreprocessorFactory
-
+import mlflow
 
 
 
@@ -28,26 +28,32 @@ def main(cfg: DictConfig):
 
     print(preprocessor.get_artifacts())
 
-    aux = preprocessor.get_artifacts()
+    #aux = preprocessor.get_artifacts()
     #print(aux['scaler'].mean_) only for nn
+
+
+
+    # testing MLFlow
+
+
+    mlflow.set_experiment('test_prep')
+
+    artifacts = preprocessor.get_artifacts()
+
+    with mlflow.start_run(run_name='test'):
+        # Log numeric and string metadata
+        mlflow.log_param("balance_factor", artifacts["balance_factor"])
+        mlflow.log_param("val_size", artifacts["val_size"])
+        
+        # Log class distributions as JSON
+        mlflow.log_dict(artifacts["class_dist_before_smote"], "class_dist_before_smote.json")
+        mlflow.log_dict(artifacts["class_dist_after_smote"], "class_dist_after_smote.json")
+        
+        # Optionally log shapes
+        mlflow.log_param("train_shape", str(artifacts["train_shape"]))
+        mlflow.log_param("val_shape", str(artifacts["val_shape"]))
 
 
 
 if __name__ == "__main__":
     main()
-
-
-
-#python main.py model_type=tree do_smote=false smote_strategy=0.5
-# python -m src.preprocessors.main
-
-
-"""
-to change vals in python
-
-from omegaconf import OmegaConf
-
-cfg.preprocessor.val_size = 0.25
-cfg.batch_size = 256
-
-"""

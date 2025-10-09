@@ -214,3 +214,6 @@ data/
 # Hydra outputs
 outputs/
 multirun/
+
+# MLflow
+mlruns/

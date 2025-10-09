@@ -5,6 +5,6 @@ defaults:
 model_type: "nn"  # nn, tree, rf, xgboost, etc.
 random_state: 42
 batch_size: 64
-experiment_name: breast_cancer_nn
+experiment_name: network_security
 
 
