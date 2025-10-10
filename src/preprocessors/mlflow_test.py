@@ -5,6 +5,32 @@ import mlflow
 
 
 
+# Set tracking URI (SQLite)
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
+
+
+#mlflow ui --backend-store-uri sqlite:///mlflow.db
+
+
+"""
+
+By default, MLflow stores artifacts (models, plots, etc.) in a local folder (mlruns/).
+You can change this to another path or a cloud storage:
+
+mlflow ui \
+  --backend-store-uri sqlite:///mlflow.db \
+  --default-artifact-root ./mlruns
+
+
+save artfs ina  cloud storage:
+# Artifact location can be on S3
+mlflow.set_artifact_uri("s3://your-bucket/mlflow-artifacts")
+
+"""
+
+
+
+
 @hydra.main(config_path="../../config", config_name="config", version_base=None)
 def main(cfg: DictConfig):
 
@@ -33,6 +59,10 @@ def main(cfg: DictConfig):
 
 
 
+
+    # scaler login!!!!
+
+
     # testing MLFlow
 
 
@@ -54,6 +84,29 @@ def main(cfg: DictConfig):
         mlflow.log_param("val_shape", str(artifacts["val_shape"]))
 
 
+        # also save scaler
+        """  
+        import joblib
+        scaler = artifacts["scaler"]
+        joblib.dump(scaler, "scaler.pkl")
+        mlflow.log_artifact("scaler.pkl", artifact_path="preprocessor")
+
+        # i shold remove it later for clarity
+        """
+        import joblib
+        import os
+        scaler = artifacts["scaler"]
+        filename = "scaler.pkl"
+
+        # Save + log + clean up
+        joblib.dump(scaler, filename)
+        mlflow.log_artifact(filename, artifact_path="preprocessor")
+        os.remove(filename)
+
+
 
 if __name__ == "__main__":
     main()
+
+
+# maybe include mlruns in thios so i have artifacts!!!!
