@@ -1,5 +1,6 @@
 defaults:
   - preprocessor: preprocessor
+  - models: tree
 
 
 model_type: "nn"  # nn, tree, rf, xgboost, etc.

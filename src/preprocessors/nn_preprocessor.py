@@ -66,10 +66,15 @@ class NNPreprocessor(BasePreprocessor):
         val_loader = DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False)
         return train_loader, val_loader
 
-    def preprocess(self):
+    def preprocessv0(self):
         self.load_data().basic_preprocessing().combine_rare_labels().encode_labels().split_features().apply_smote().scale_features()
         train_loader, val_loader = self.get_dataloaders()
         return train_loader, val_loader, self.get_artifacts()
+
+
+    def preprocess(self):
+        self.load_data().basic_preprocessing().combine_rare_labels().encode_labels().split_features().apply_smote().scale_features()
+        return self.X_train.values, self.X_val.values, self.y_train.values, self.y_val.values, self.get_artifacts()
 
 
 """
