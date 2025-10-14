@@ -59,7 +59,7 @@ def main(cfg: DictConfig):
         # ---------------------------
         # 5️⃣ Initialize trainer
         # ---------------------------
-        trainer = TrainerFactory.get_trainer(model_name, cfg, cfg.models, input_size, num_classes)  
+        trainer = TrainerFactory.get_trainer(model_name, cfg, cfg.models, input_size, num_classes)  # pass prpeorecsse and that factory decides!!!
             # returns an instantiated trainer of the corresponding class
         # e.g. TreeTrainer
 

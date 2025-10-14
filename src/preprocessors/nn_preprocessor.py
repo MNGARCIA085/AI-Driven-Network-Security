@@ -85,3 +85,24 @@ mlflow.log_param("num_classes", prep.num_classes)
 mlflow.log_artifact("scaler.pkl")
 mlflow.log_artifact("encoder.pkl")
 """
+
+
+
+"""
+ para poder pasar un scaler!!!
+
+class MyDataset:
+    def __init__(self, pre_cfg, global_cfg, scaler=None):
+        self.scaler_type = pre_cfg.scaler_type
+        self.scaler = scaler
+        if self.scaler is None:
+            # instanciar según tipo
+            if self.scaler_type == "standard":
+                self.scaler = StandardScaler()
+            elif self.scaler_type == "minmax":
+                self.scaler = MinMaxScaler()
+            elif self.scaler_type == "robust":
+                self.scaler = RobustScaler()
+            else:
+                self.scaler = None
+"""

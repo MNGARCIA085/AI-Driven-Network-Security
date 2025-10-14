@@ -110,3 +110,4 @@ if __name__ == "__main__":
 
 
 # maybe include mlruns in thios so i have artifacts!!!!
+#mlflow ui --backend-store-uri sqlite:///mlflow.db
