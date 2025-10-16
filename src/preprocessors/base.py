@@ -17,7 +17,8 @@ class BasePreprocessor(ABC):
         self.val_size = pre_cfg.val_size
         self.random_state = global_cfg.random_state
         self.scaler_type = pre_cfg.scaler_type  # 'standard', 'minmax', 'robust', 'none'
-        self.scaler = None
+
+
 
         # Data placeholders
         self.df = None
@@ -63,9 +64,13 @@ class BasePreprocessor(ABC):
 
     def encode_labels(self):
         """Encode target labels to integers."""
+        print(self.df['Label'].value_counts())
         le = LabelEncoder()
         self.df['Label'] = le.fit_transform(self.df['Label'])
         self.label_encoder = le
+        
+        #print("Encoded labels:", self.df['Label'])
+        #print("Original classes:", le.classes_)
         return self
 
 
@@ -156,6 +161,18 @@ class BasePreprocessor(ABC):
     def preprocess(self):
         """Subclasses implement their own full preprocessing pipeline."""
         pass
+
+
+    @abstractmethod
+    def preprocess_inference(self, data):
+        """Preprocess full test or inference dataset using fitted transformers."""
+        pass
+
+    @abstractmethod
+    def preprocess_single(self, sample):
+        """Preprocess a single new sample (1 row or dict)."""
+        pass
+
 
 
 
