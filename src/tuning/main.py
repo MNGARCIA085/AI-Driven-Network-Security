@@ -11,6 +11,13 @@ import os
 import joblib
 
 
+import numpy as np
+
+
+from sklearn.metrics import confusion_matrix, roc_curve, auc
+import seaborn as sns
+
+
 
 
 mlflow.set_tracking_uri("sqlite:///mlflow.db")
@@ -69,14 +76,14 @@ def main(cfg: DictConfig):
 
 
         # 1️⃣ Tune
-        tuner = NNTuner(X_train, y_train, X_val, y_val, num_classes)
+        tuner = NNTuner(cfg, X_train, y_train, X_val, y_val, num_classes)
         best_config = tuner.tune(num_samples=10)
 
         # 2️⃣ Train best model and get all metrics
-        metrics = tuner.train_best_model(best_config, epochs=5)
+        metrics = tuner.train_best_model(best_config)
         #print(metrics)
 
-        print(metrics)
+        #print(metrics)
         print(type(metrics))
 
         # 3️⃣ External logging (MLflow, wandb, etc.)
@@ -129,6 +136,55 @@ def main(cfg: DictConfig):
         # Optionally, remove local files after logging
         os.remove(train_val_loss_path)
         os.remove(val_acc_path)
+
+
+        #---------------------
+
+        # --- Confusion Matrix ---
+        cm = confusion_matrix(metrics["val_labels"], metrics["val_preds"])
+        plt.figure(figsize=(6,6))
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+        plt.xlabel("Predicted")
+        plt.ylabel("True")
+        plt.title("Confusion Matrix")
+        cm_path = "confusion_matrix.png"
+        plt.savefig(cm_path)
+        plt.close()
+        mlflow.log_artifact(cm_path)
+        os.remove(cm_path)
+
+
+
+        #-------https://scikit-learn.org/stable/modules/generated/sklearn.metrics.roc_curve.html
+        # desconfiar!!!! demasiado bueno
+        from sklearn.preprocessing import label_binarize
+        # as input true labesl and pred scores
+        
+
+        y_true = np.array(metrics["val_labels"])        # shape (n_samples,)
+        y_score = np.array(metrics["val_preds_proba"])  # shape (n_samples, n_classes)
+        num_classes = y_score.shape[1]
+
+        # Binarize labels for multiclass One-vs-Rest ROC
+        y_true_bin = label_binarize(y_true, classes=range(num_classes))
+
+        plt.figure()
+        for i in range(num_classes):
+            fpr, tpr, _ = roc_curve(y_true_bin[:, i], y_score[:, i])
+            roc_auc = auc(fpr, tpr)
+            plt.plot(fpr, tpr, label=f"Class {i} (AUC={roc_auc:.2f})")
+
+        plt.plot([0, 1], [0, 1], "k--")
+        plt.xlabel("False Positive Rate")
+        plt.ylabel("True Positive Rate")
+        plt.title("Multiclass ROC Curve (One-vs-Rest)")
+        plt.legend(loc="lower right")
+
+        # Save figure and log to MLflow
+        roc_path = "roc_multiclass.png"
+        plt.savefig(roc_path)
+        plt.close()
+        mlflow.log_artifact(roc_path)
 
 
 if __name__ == "__main__":

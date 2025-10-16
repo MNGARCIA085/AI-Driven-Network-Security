@@ -16,10 +16,12 @@ class NNPreprocessor(BasePreprocessor):
         # NN-specific scaler type from pre_cfg
         #self.scaler_type = getattr(pre_cfg, "scaler_type", "standard")
 
+
     def scale_features(self):
         if self.scaler_type == "none":
             return self
 
+        # select scaler type
         scaler_map = {
             "standard": StandardScaler,
             "minmax": MinMaxScaler,
@@ -30,12 +32,9 @@ class NNPreprocessor(BasePreprocessor):
         scaler_cls = scaler_map.get(self.scaler_type)
         if scaler_cls is None:
             raise ValueError(f"Unknown scaler type: {self.scaler_type}")
-
         self.scaler = scaler_cls()
-        #self.X_train = self.scaler.fit_transform(self.X_train)
-        #self.X_val = self.scaler.transform(self.X_val)
-        #scaler = StandardScaler()
-        
+
+        # fit (only with training data)        
         self.scaler.fit(self.X_train)
 
         # Scale training set
@@ -55,26 +54,18 @@ class NNPreprocessor(BasePreprocessor):
         #self.scaler = scaler
         return self
 
-    def get_dataloaders(self):
-        X_train_tensor = torch.tensor(self.X_train.values, dtype=torch.float32)
-        y_train_tensor = torch.tensor(self.y_train.values, dtype=torch.long)
-        X_val_tensor = torch.tensor(self.X_val.values, dtype=torch.float32)
-        y_val_tensor = torch.tensor(self.y_val.values, dtype=torch.long)
-        train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
-        val_dataset = TensorDataset(X_val_tensor, y_val_tensor)
-        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
-        val_loader = DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False)
-        return train_loader, val_loader
 
-    def preprocessv0(self):
-        self.load_data().basic_preprocessing().combine_rare_labels().encode_labels().split_features().apply_smote().scale_features()
-        train_loader, val_loader = self.get_dataloaders()
-        return train_loader, val_loader, self.get_artifacts()
-
-
+    # preprocess
     def preprocess(self):
         self.load_data().basic_preprocessing().combine_rare_labels().encode_labels().split_features().apply_smote().scale_features()
         return self.X_train.values, self.X_val.values, self.y_train.values, self.y_val.values, self.get_artifacts()
+
+
+
+
+
+
+
 
 
 """

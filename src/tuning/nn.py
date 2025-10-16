@@ -4,105 +4,107 @@ import torch.optim as optim
 from torch.utils.data import TensorDataset, DataLoader
 from ray import tune
 from ray.tune.schedulers import ASHAScheduler
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, roc_curve, auc
-import numpy as np
-
-class NNModel(nn.Module):
-    def __init__(self, input_size, num_classes, hidden1, hidden2):
-        super().__init__()
-        self.model = nn.Sequential(
-            nn.Linear(input_size, hidden1),
-            nn.ReLU(),
-            nn.Linear(hidden1, hidden2),
-            nn.ReLU(),
-            nn.Linear(hidden2, num_classes)
-        )
-
-    def forward(self, x):
-        return self.model(x)
-
-
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import ray
+from src.models.nnet import NNModel
+import numpy as np
 
 
 class NNTuner:
-    def __init__(self, X_train, y_train, X_val, y_val, num_classes, average="macro"):
+    def __init__(self, cfg, X_train, y_train, X_val, y_val, num_classes, average="weighted"):
+        self.cfg = cfg
         self.X_train_id = ray.put(X_train)
         self.y_train_id = ray.put(y_train)
         self.X_val_id = ray.put(X_val)
         self.y_val_id = ray.put(y_val)
+        self.input_size = X_train.shape[1]
         self.num_classes = num_classes
         self.average = average
 
-    def _train_model_ray(self, config):
-        import torch
-        import torch.nn as nn
-        import torch.optim as optim
-        from torch.utils.data import TensorDataset, DataLoader
-        from ray import tune
-        from sklearn.metrics import f1_score
+        # device once
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        # retrieve large arrays from Ray object store
+    # --- Data loaders ---
+    def create_loaders(self, batch_size):
         X_train = ray.get(self.X_train_id)
         y_train = ray.get(self.y_train_id)
         X_val = ray.get(self.X_val_id)
         y_val = ray.get(self.y_val_id)
 
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        model = NNModel(
-            input_size=X_train.shape[1],
-            num_classes=self.num_classes,
-            hidden1=config["hidden1"],
-            hidden2=config["hidden2"]
-        ).to(device)
-
-        optimizer = optim.Adam(model.parameters(), lr=config["lr"])
-        criterion = nn.CrossEntropyLoss()
-
         train_loader = DataLoader(
             TensorDataset(torch.tensor(X_train, dtype=torch.float32),
                           torch.tensor(y_train, dtype=torch.long)),
-            batch_size=config["batch_size"], shuffle=True
+            batch_size=batch_size, shuffle=True
         )
         val_loader = DataLoader(
             TensorDataset(torch.tensor(X_val, dtype=torch.float32),
                           torch.tensor(y_val, dtype=torch.long)),
-            batch_size=256, shuffle=False
+            batch_size=batch_size, shuffle=False
         )
+        return train_loader, val_loader
 
-        for _ in range(2): #10
-            model.train()
-            for xb, yb in train_loader:
-                xb, yb = xb.to(device), yb.to(device)
-                optimizer.zero_grad()
-                loss = criterion(model(xb), yb)
-                loss.backward()
-                optimizer.step()
+    # --- Training one epoch ---
+    def train_one_epoch(self, model, loader, optimizer, criterion):
+        model.train()
+        total_loss = 0.0
+        for xb, yb in loader:
+            xb, yb = xb.to(self.device), yb.to(self.device)
+            optimizer.zero_grad()
+            loss = criterion(model(xb), yb)
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+        return total_loss / len(loader)
 
-            # validation
-            model.eval()
-            preds, labels = [], []
-            with torch.no_grad():
-                for xb, yb in val_loader:
-                    xb = xb.to(device)
-                    out = model(xb)
-                    preds.extend(out.argmax(1).cpu().numpy())
-                    labels.extend(yb.numpy())
+    # --- Evaluation ---
+    def eval_one_epoch(self, model, loader, criterion):
+        model.eval()
+        preds, labels, probs = [], [], []
+        total_loss = 0.0
 
-            f1 = f1_score(labels, preds, average=self.average)
-            #tune.report(f1=f1)
+        with torch.no_grad():
+            for xb, yb in loader:
+                xb, yb = xb.to(self.device), yb.to(self.device)
+                out = model(xb)
+                total_loss += criterion(out, yb).item()
+                prob = nn.functional.softmax(out, dim=1)
+                probs.extend(prob.cpu().numpy())
+                preds.extend(out.argmax(1).cpu().numpy())
+                labels.extend(yb.cpu().numpy())
+
+        avg_loss = total_loss / len(loader)
+        acc = accuracy_score(labels, preds)
+        f1 = f1_score(labels, preds, average=self.average, zero_division=0)
+        return f1, avg_loss, acc, preds, labels, np.array(probs)
+
+
+
+    # --- Ray train function ---
+    def _train_model_ray(self, config):
+        model = NNModel(
+            input_size=self.input_size,
+            num_classes=self.num_classes,
+            hidden1=config["hidden1"],
+            hidden2=config["hidden2"]
+        ).to(self.device)
+
+        optimizer = optim.Adam(model.parameters(), lr=config["lr"])
+        criterion = nn.CrossEntropyLoss()
+        train_loader, val_loader = self.create_loaders(config["batch_size"])
+
+        for _ in range(self.cfg.tuning.epochs_trials):  # epochs for tuning
+            self.train_one_epoch(model, train_loader, optimizer, criterion)
+            f1, _, _, _, _,_ = self.eval_one_epoch(model, val_loader, criterion)
             tune.report({"f1": f1})
 
-
-
-
-
+    # --- Tune hyperparameters ---
     def tune(self, num_samples=5):
+
         config = {
-            "hidden1": tune.choice([64, 128, 256]),
-            "hidden2": tune.choice([32, 64, 128]),
-            "batch_size": tune.choice([32, 64]),
-            "lr": tune.loguniform(1e-4, 1e-2),
+            "hidden1": tune.choice(self.cfg.tuning.hidden1),
+            "hidden2": tune.choice(self.cfg.tuning.hidden2),
+            "batch_size": tune.choice(self.cfg.tuning.batch_size),
+            "lr": tune.loguniform(self.cfg.tuning.lr.min, self.cfg.tuning.lr.max),
         }
 
         scheduler = ASHAScheduler(metric="f1", mode="max")
@@ -111,9 +113,7 @@ class NNTuner:
             param_space=config,
             tune_config=tune.TuneConfig(
                 scheduler=scheduler,
-                num_samples=1 #num_samples,
-                #metric="f1",
-                #mode="max"
+                num_samples=1, #num_samples
             )
         )
 
@@ -121,73 +121,34 @@ class NNTuner:
         best = results.get_best_result(metric="f1", mode="max")
         return best.config
 
-    # === Train the best model fully and return all relevant info ===
-    def train_best_model(self, config, epochs=5):
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-
-        # retrieve the arrays from Ray object store
-        X_train = ray.get(self.X_train_id)
-        y_train = ray.get(self.y_train_id)
-        X_val = ray.get(self.X_val_id)
-        y_val = ray.get(self.y_val_id)
-
+    # --- Train best model ---
+    def train_best_model(self, config):
         model = NNModel(
-            input_size=X_train.shape[1],
+            input_size=self.input_size,
             num_classes=self.num_classes,
             hidden1=config["hidden1"],
             hidden2=config["hidden2"]
-        ).to(device)
+        ).to(self.device)
 
         optimizer = optim.Adam(model.parameters(), lr=config["lr"])
         criterion = nn.CrossEntropyLoss()
-
-        train_loader = DataLoader(
-            TensorDataset(torch.tensor(X_train, dtype=torch.float32),
-                          torch.tensor(y_train, dtype=torch.long)),
-            batch_size=config["batch_size"], shuffle=True
-        )
-        val_loader = DataLoader(
-            TensorDataset(torch.tensor(X_val, dtype=torch.float32),
-                          torch.tensor(y_val, dtype=torch.long)),
-            batch_size=256, shuffle=False
-        )
+        train_loader, val_loader = self.create_loaders(config["batch_size"])
 
         train_losses, val_losses, val_accs = [], [], []
         all_val_preds, all_val_labels = [], []
 
-        for epoch in range(epochs):
-            model.train()
-            total_loss = 0
-            for xb, yb in train_loader:
-                xb, yb = xb.to(device), yb.to(device)
-                optimizer.zero_grad()
-                loss = criterion(model(xb), yb)
-                loss.backward()
-                optimizer.step()
-                total_loss += loss.item()
-            train_losses.append(total_loss / len(train_loader))
+        for _ in range(self.cfg.tuning.epochs):
+            train_loss = self.train_one_epoch(model, train_loader, optimizer, criterion)
+            f1, val_loss, val_acc, preds, labels, probs = self.eval_one_epoch(model, val_loader, criterion)
 
-            # validation
-            model.eval()
-            val_loss = 0
-            preds, labels = [], []
-            with torch.no_grad():
-                for xb, yb in val_loader:
-                    xb, yb = xb.to(device), yb.to(device)
-                    out = model(xb)
-                    val_loss += criterion(out, yb).item()
-                    pred_labels = out.argmax(1).cpu().numpy()
-                    preds.extend(pred_labels)
-                    labels.extend(yb.cpu().numpy())
-
-            val_loss /= len(val_loader)
-            acc = accuracy_score(labels, preds)
-            val_accs.append(acc)
+            train_losses.append(train_loss)
             val_losses.append(val_loss)
-            all_val_preds = preds
-            all_val_labels = labels
+            val_accs.append(val_acc)
+        
+        # final epoch preds.
+        # 2️⃣ Make predictions with the trained model
+        all_val_preds, all_val_labels, all_val_probs = self.predict(val_loader, model)
 
-        # final metrics
         metrics = {
             "accuracy": accuracy_score(all_val_labels, all_val_preds),
             "precision": precision_score(all_val_labels, all_val_preds, average=self.average, zero_division=0),
@@ -196,9 +157,23 @@ class NNTuner:
             "train_losses": train_losses,
             "val_losses": val_losses,
             "val_accs": val_accs,
-             #"val_preds": all_val_preds,
-             #"val_labels": all_val_labels,
-            "model": model
+            "val_preds": all_val_preds,
+            "val_labels": all_val_labels,
+            "model": model,
+            "val_preds_proba": all_val_probs,  # added for ROC
         }
-
         return metrics
+
+
+    def predict(self, loader, model):
+        model.eval()
+        preds, labels, probs = [], [], []
+        with torch.no_grad():
+            for xb, yb in loader:
+                xb, yb = xb.to(self.device), yb.to(self.device)
+                out = model(xb)
+                prob = nn.functional.softmax(out, dim=1)
+                probs.extend(prob.cpu().numpy())
+                preds.extend(out.argmax(1).cpu().numpy())
+                labels.extend(yb.cpu().numpy())
+        return np.array(preds), np.array(labels), np.array(probs)

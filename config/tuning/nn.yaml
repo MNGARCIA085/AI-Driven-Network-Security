@@ -1,0 +1,11 @@
+num_samples: 1
+hidden1: [64, 128, 256]
+hidden2: [32, 64, 128]
+batch_size: [32, 64]
+lr:
+  type: loguniform
+  min: 1e-4
+  max: 1e-2
+epochs: 2
+epochs_trials: 2  # short runs for hyperparameter search
+average: "macro"

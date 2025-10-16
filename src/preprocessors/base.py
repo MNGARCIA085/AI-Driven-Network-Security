@@ -9,10 +9,6 @@ from imblearn.over_sampling import SMOTE
 class BasePreprocessor(ABC):
     
     def __init__(self, global_cfg, pre_cfg):
-        """
-        path, features=None, batch_size=64, balance_factor=0.2,
-                 val_size=0.2, random_state=42, scaler_type="standard"):
-        """
 
         self.path = pre_cfg.path
         self.features = pre_cfg.features
@@ -95,10 +91,6 @@ class BasePreprocessor(ABC):
         """Apply SMOTE with balance_factor ∈ [0,1]."""
         if self.balance_factor <= 0:
             return self
-
-
-        #self._class_dist_before_smote = self.y_train.value_counts().to_dict()
-        #self._class_dist_after_smote = pd.Series(y_res).value_counts().to_dict()
 
         class_counts = self.y_train.value_counts()
         self._class_dist_before_smote = class_counts.to_dict()
