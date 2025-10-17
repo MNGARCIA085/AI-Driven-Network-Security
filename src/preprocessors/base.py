@@ -19,6 +19,9 @@ class BasePreprocessor(ABC):
         self.scaler_type = pre_cfg.scaler_type  # 'standard', 'minmax', 'robust', 'none'
 
 
+        self.scaler = None # if not passed -> check!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
 
         # Data placeholders
         self.df = None

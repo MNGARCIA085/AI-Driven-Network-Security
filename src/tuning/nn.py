@@ -149,7 +149,7 @@ class NNTuner:
         # 2️⃣ Make predictions with the trained model
         all_val_preds, all_val_labels, all_val_probs = self.predict(val_loader, model)
 
-        metrics = {
+        metrics = { # results later
             "accuracy": accuracy_score(all_val_labels, all_val_preds),
             "precision": precision_score(all_val_labels, all_val_preds, average=self.average, zero_division=0),
             "recall": recall_score(all_val_labels, all_val_preds, average=self.average, zero_division=0),

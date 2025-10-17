@@ -1,4 +1,6 @@
 from .base import BasePreprocessor
+import pandas as pd
+
 
 class TreePreprocessor(BasePreprocessor):
     
@@ -13,7 +15,7 @@ class TreePreprocessor(BasePreprocessor):
 
 
     #########TO CHECK######################
-    def preprocess_test_tree(self, df, label_encoder, features=None): # for label test data
+    def preprocess_test(self, df, label_encoder, features=None): # for label test data
         """
         Preprocess a labeled test set for tree-based models.
         - Cleans and aligns features.
@@ -39,7 +41,7 @@ class TreePreprocessor(BasePreprocessor):
         return X.values, y_encoded
 
 
-    def preprocess_inference_tree(self, df, features=None):
+    def preprocess_inference(self, df, features=None):
         """
         Preprocess new unlabeled data for tree-based models (no scaling, no label encoding).
         """
@@ -50,7 +52,7 @@ class TreePreprocessor(BasePreprocessor):
         return X.values
 
 
-    def preprocess_single_tree(self, sample):
+    def preprocess_single(self, sample):
         """
         Preprocess a single sample for tree-based models (no scaling).
         """

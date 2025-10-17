@@ -5,6 +5,7 @@ import torch.nn as nn
 
 
 
+
 class NNModel(nn.Module):
     def __init__(self, input_size, num_classes, hidden1=128, hidden2=64):
         super().__init__()
@@ -28,12 +29,7 @@ class NNModel(nn.Module):
 
 
 
-
-
-
 # with config file for hidden dims
-
-
 class SimpleNN(nn.Module):
     def __init__(self, input_size, num_classes):
         super(SimpleNN, self).__init__()

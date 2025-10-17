@@ -1,0 +1,211 @@
+from .tree import TreeTuner
+import mlflow
+import hydra
+from omegaconf import DictConfig, OmegaConf
+from src.preprocessors.factory import PreprocessorFactory
+import matplotlib.pyplot as plt
+import os
+import joblib
+import numpy as np
+from sklearn.metrics import confusion_matrix, roc_curve, auc
+import seaborn as sns
+
+import mlflow.sklearn
+
+
+
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
+
+# Set default folder for artifacts
+artifact_dir = os.path.abspath("./mlruns")  # choose any folder
+os.makedirs(artifact_dir, exist_ok=True)
+
+
+mlflow.set_experiment("nn_experiment")  # ensures artifact path is set
+
+
+
+@hydra.main(config_path="../../config", config_name="config", version_base=None)
+def main(cfg: DictConfig):
+    # add logging
+
+    # get data from prep
+    # model_name = cfg.models.name
+    model_name = cfg.model_type
+    print(f"\nSelected model: {model_name}")
+
+
+    with mlflow.start_run(run_name='vamosTree'):
+
+        # -------------------------------
+        # 3️⃣ Preprocess data
+        # -------------------------------
+        preprocessor = PreprocessorFactory.get_preprocessor(model_name, cfg, cfg.preprocessor)
+        X_train, X_val, y_train, y_val, artifacts = preprocessor.preprocess()
+        print(f"Training data shape: {X_train.shape}")
+
+        input_size = preprocessor.input_size
+        num_classes = preprocessor.num_classes
+
+
+
+        artifacts = preprocessor.get_artifacts()
+        # Log numeric and string metadata
+        mlflow.log_param("balance_factor", artifacts["balance_factor"])
+        mlflow.log_param("val_size", artifacts["val_size"])
+        # Log class distributions as JSON
+        mlflow.log_dict(artifacts["class_dist_before_smote"], "class_dist_before_smote.json")
+        mlflow.log_dict(artifacts["class_dist_after_smote"], "class_dist_after_smote.json")
+        # Optionally log shapes
+        mlflow.log_param("train_shape", str(artifacts["train_shape"]))
+        mlflow.log_param("val_shape", str(artifacts["val_shape"]))
+        scaler = artifacts["scaler"]
+        filename = "scaler.pkl"
+        # Save + log + clean up
+        joblib.dump(scaler, filename)
+        mlflow.log_artifact(filename, artifact_path="preprocessor")
+        os.remove(filename)
+
+
+
+
+        # 1️⃣ Tune
+
+
+        model_type = model_name
+        cfg_tuning = OmegaConf.load(f"config/tuning/{model_type}.yaml") #use tuning/tree.yaml
+        tuner = TreeTuner(cfg_tuning, X_train, y_train, X_val, y_val)
+        
+
+
+
+        best_config = tuner.tune(num_samples=10)
+
+        # 2️⃣ Train best model and get all metrics
+        metrics = tuner.train_best_model(best_config)
+        print(metrics)
+
+        #print(metrics)
+        print(type(metrics))
+
+        # 3️⃣ External logging (MLflow, wandb, etc.)
+        # e.g., mlflow.log_metrics(metrics) and generate plots from metrics["train_losses"], etc.
+
+        
+
+        mlflow.log_metric("accuracy", metrics["accuracy"])
+        mlflow.log_metric("precision", metrics["precision"])
+        mlflow.log_metric("recall", metrics["recall"])
+        mlflow.log_metric("f1", metrics["f1"])
+
+        #
+        #train_val_loss_path = os.path.join(os.getcwd(), "loss_curve.png")
+        #val_acc_path = os.path.join(os.getcwd(), "val_acc_curve.png")
+
+
+
+        """
+        # --- Log training/validation curves ---
+        # Training loss curve
+        plt.figure()
+        plt.plot(metrics["train_losses"], label="train_loss")
+        plt.plot(metrics["val_losses"], label="val_loss")
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.legend()
+        train_val_loss_path = "loss_curve.png"
+        plt.savefig(train_val_loss_path)
+        plt.close()
+        mlflow.log_artifact(train_val_loss_path)
+
+        # Validation accuracy curve
+        plt.figure()
+        plt.plot(metrics["val_accs"], label="val_accuracy")
+        plt.xlabel("Epoch")
+        plt.ylabel("Accuracy")
+        plt.legend()
+        val_acc_path = "val_acc_curve.png"
+        plt.savefig(val_acc_path)
+        plt.close()
+        mlflow.log_artifact(val_acc_path)
+
+
+        # Optionally, remove local files after logging
+        os.remove(train_val_loss_path)
+        os.remove(val_acc_path)
+
+
+        """
+
+        # --- Log the model ---
+        #
+        # after metrics computed
+
+
+        model = metrics['model']
+        mlflow.sklearn.log_model(model, "tree_model")
+        # to fix warning:mlflow.sklearn.log_model(model, name="tree_model")
+
+        #model = mlflow.sklearn.load_model("runs:/<run_id>/tree_model")
+
+
+
+        
+
+        #---------------------
+
+        # --- Confusion Matrix ---
+        cm = confusion_matrix(metrics["val_labels"], metrics["val_preds"])
+        plt.figure(figsize=(6,6))
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+        plt.xlabel("Predicted")
+        plt.ylabel("True")
+        plt.title("Confusion Matrix")
+        cm_path = "confusion_matrix.png"
+        plt.savefig(cm_path)
+        plt.close()
+        mlflow.log_artifact(cm_path)
+        os.remove(cm_path)
+
+
+
+        #-------https://scikit-learn.org/stable/modules/generated/sklearn.metrics.roc_curve.html
+        # desconfiar!!!! demasiado bueno
+        from sklearn.preprocessing import label_binarize
+        # as input true labesl and pred scores
+        
+
+        
+        y_true = np.array(metrics["val_labels"])        # shape (n_samples,)
+        y_score = np.array(metrics["val_preds_proba"])  # shape (n_samples, n_classes)
+        num_classes = y_score.shape[1]
+
+        # Binarize labels for multiclass One-vs-Rest ROC
+        y_true_bin = label_binarize(y_true, classes=range(num_classes))
+
+        plt.figure()
+        for i in range(num_classes):
+            fpr, tpr, _ = roc_curve(y_true_bin[:, i], y_score[:, i])
+            roc_auc = auc(fpr, tpr)
+            plt.plot(fpr, tpr, label=f"Class {i} (AUC={roc_auc:.2f})")
+
+        plt.plot([0, 1], [0, 1], "k--")
+        plt.xlabel("False Positive Rate")
+        plt.ylabel("True Positive Rate")
+        plt.title("Multiclass ROC Curve (One-vs-Rest)")
+        plt.legend(loc="lower right")
+
+        # Save figure and log to MLflow
+        roc_path = "roc_multiclass.png"
+        plt.savefig(roc_path)
+        plt.close()
+        mlflow.log_artifact(roc_path)
+        
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+#python -m src.tuning.main_tree model_type=tree
