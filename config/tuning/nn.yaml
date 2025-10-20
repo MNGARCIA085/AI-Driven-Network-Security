@@ -8,4 +8,4 @@ lr:
   max: 1e-2
 epochs: 2
 epochs_trials: 2  # short runs for hyperparameter search
-average: "macro"
+average: "weighted"

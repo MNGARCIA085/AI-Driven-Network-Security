@@ -9,14 +9,16 @@ import ray
 
 
 
-class TreeTuner:
-    def __init__(self, cfg, X_train, y_train, X_val, y_val, average="weighted"):
-        self.cfg = cfg
-        self.X_train_id = ray.put(X_train)
-        self.y_train_id = ray.put(y_train)
-        self.X_val_id = ray.put(X_val)
-        self.y_val_id = ray.put(y_val)
-        self.average = average
+
+from .base import BaseTuner
+
+
+
+class TreeTuner(BaseTuner):
+    def __init__(self, cfg, X_train, y_train, X_val, y_val):
+        super().__init__(cfg, X_train, y_train, X_val, y_val)
+
+
 
     # --- Evaluation ---
     def eval_model(self, model, X, y):
@@ -49,39 +51,15 @@ class TreeTuner:
         f1 = metrics["f1"]
         tune.report({"f1": f1})
 
-        #tune.report(f1=metrics["f1"])
-
-    # --- Tune hyperparameters ---
-    def tune(self, num_samples=10):
         
 
-        """
-        config = {
-            "criterion": tune.choice(["gini", "entropy", "log_loss"]),
-            "max_depth": tune.randint(2, 20),
-            "min_samples_split": tune.randint(2, 10)
-        }
-        """
-
-        config = {
+    # get tune config
+    def get_tune_config(self):
+        return {
             "criterion": tune.choice(self.cfg.criterion),
             "max_depth": tune.randint(self.cfg.max_depth.min, self.cfg.max_depth.max),
             "min_samples_split": tune.randint(self.cfg.min_samples_split.min, self.cfg.min_samples_split.max)
         }
-
-        scheduler = ASHAScheduler(metric="f1", mode="max")
-        
-        tuner = tune.Tuner(
-            tune.with_parameters(self._train_model_ray),
-            param_space=config,
-            tune_config=tune.TuneConfig(
-                scheduler=scheduler,
-                num_samples=2 #num_samples
-            )
-        )
-        results = tuner.fit()
-        best = results.get_best_result(metric="f1", mode="max")
-        return best.config
 
     # --- Train best model ---
     def train_best_model(self, config):
@@ -111,11 +89,3 @@ class TreeTuner:
 
 
 
-
-
-
-
-
-
-
-# abstract class later to be coherent

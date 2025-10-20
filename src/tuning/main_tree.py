@@ -3,15 +3,8 @@ import mlflow
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from src.preprocessors.factory import PreprocessorFactory
-import matplotlib.pyplot as plt
 import os
-import joblib
-import numpy as np
-from sklearn.metrics import confusion_matrix, roc_curve, auc
-import seaborn as sns
-
-import mlflow.sklearn
-
+from src.utils.logging import logging
 
 
 mlflow.set_tracking_uri("sqlite:///mlflow.db")
@@ -25,70 +18,10 @@ mlflow.set_experiment("nn_experiment")  # ensures artifact path is set
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 #model = metrics['model']
 #mlflow.sklearn.log_model(model, "tree_model")
 # to fix warning:mlflow.sklearn.log_model(model, name="tree_model")
 #model = mlflow.sklearn.load_model("runs:/<run_id>/tree_model")
-
-
-
-
-from .main import plot_cm,plot_roc,plot_acc,plot_loss
-
-
-
-# later test !!!!!!!!!!!!!!!!!!!!!!!!
-def logging(artifacts, results, model_type="nn"):
-    # Common params
-    mlflow.log_param("val_size", artifacts["val_size"])
-
-    # Optional artifacts
-    if "scaler" in artifacts and artifacts["scaler"] is not None:
-        filename = "scaler.pkl"
-        joblib.dump(artifacts["scaler"], filename)
-        mlflow.log_artifact(filename, artifact_path="preprocessor")
-        os.remove(filename)
-
-    # Metrics (shared)
-    for m in ["accuracy", "precision", "recall", "f1"]:
-        if m in results:
-            mlflow.log_metric(m, results[m])
-
-    # Model-specific logs
-    if model_type == "nn":
-        mlflow.pytorch.log_model(results["model"], artifact_path="model")
-        for plot_fn in [plot_loss, plot_acc, plot_cm, plot_roc]:
-            path = plot_fn(results)
-            mlflow.log_artifact(path)
-            os.remove(path)
-    else:
-        mlflow.sklearn.log_model(results["model"], name="model")
-        for plot_fn in [plot_cm, plot_roc]:
-            path = plot_fn(results)
-            mlflow.log_artifact(path)
-            os.remove(path)
-
-
-
-
-
-
-
-
-
-
-
 
 
 
