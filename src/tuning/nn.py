@@ -12,9 +12,6 @@ from src.models.nnet import NNModel
 
 
 
-
-
-
 class NNTuner(BaseTuner):
     def __init__(self, cfg, X_train, y_train, X_val, y_val, num_classes):
         super().__init__(cfg, X_train, y_train, X_val, y_val)
@@ -236,6 +233,50 @@ def eval_model(self, model, loader):
 
 
 
+"""
+for a diffrent lasdst batch
 
+def train_one_epoch(self, model, loader, optimizer, criterion):
+    
+    Train the model for one epoch and return average loss per sample and training accuracy.
+    
+    Args:
+        model: PyTorch model
+        loader: DataLoader for training data
+        optimizer: optimizer (e.g., Adam)
+        criterion: loss function (e.g., CrossEntropyLoss)
+    
+    Returns:
+        avg_loss: average loss per sample
+        train_acc: training accuracy over the epoch
+    
+    model.train()
+    total_loss = 0.0
+    total_samples = 0
+    all_preds, all_labels = [], []
+
+    for xb, yb in loader:
+        xb, yb = xb.to(self.device), yb.to(self.device)
+        optimizer.zero_grad()
+        out = model(xb)
+        loss = criterion(out, yb)
+        loss.backward()
+        optimizer.step()
+
+        batch_size = xb.size(0)
+        total_loss += loss.item() * batch_size  # weighted by batch size
+        total_samples += batch_size
+
+        # Collect predictions for training accuracy
+        preds = out.argmax(dim=1)
+        all_preds.extend(preds.cpu().numpy())
+        all_labels.extend(yb.cpu().numpy())
+
+    avg_loss = total_loss / total_samples
+    train_acc = (np.array(all_preds) == np.array(all_labels)).mean()
+
+    return avg_loss, train_acc
+
+"""
 
 

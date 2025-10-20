@@ -1,64 +1,75 @@
-from .nn import NNTuner
 import mlflow
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from src.preprocessors.factory import PreprocessorFactory
+from src.tuning.factory import TunerFactory
 import os
 from src.utils.logging import logging
 
 
 
+
+# tracking uri
 mlflow.set_tracking_uri("sqlite:///mlflow.db")
 
 # Set default folder for artifacts
 artifact_dir = os.path.abspath("./mlruns")  # choose any folder
 os.makedirs(artifact_dir, exist_ok=True)
 
-mlflow.set_experiment("nn_experiment")  # ensures artifact path is set
+# ensures artifact path is set
+mlflow.set_experiment("nn_experiment")  
 
 
 
 
 @hydra.main(config_path="../../config", config_name="config", version_base=None)
 def main(cfg: DictConfig):
-    # add logging
 
-    # get data from prep
-    model_type = cfg.model_type # # model_name = cfg.models.name, maybe is better there?
+
+    # get model type (nn, tree.....)
+    model_type = cfg.model_type
     print(f"\nSelected model: {model_type}")
 
 
     with mlflow.start_run(run_name='Tuning'):
 
-        # -------------------------------
-        #  Preprocess data
-        # -------------------------------
+        # Preprocessing
         preprocessor = PreprocessorFactory.get_preprocessor(model_type, cfg, cfg.preprocessor)
         X_train, X_val, y_train, y_val, artifacts = preprocessor.preprocess()
-        print(f"Training data shape: {X_train.shape}")
-
-        # number of classes, maybe it should be in num_classes
-        num_classes = preprocessor.num_classes
-
         artifacts = preprocessor.get_artifacts()
-        # Log numeric and string metadata
-        
-        # Tune
-        cfg_tuning = OmegaConf.load(f"config/tuning/{model_type}.yaml") #use tuning/nn.yaml
-        tuner = NNTuner(cfg_tuning, X_train, y_train, X_val, y_val, num_classes)
+
+        # Tuning
+        cfg_tuning = OmegaConf.load(f"config/tuning/{model_type}.yaml") # use tuning/nn.yaml or tuning/tree.yaml....
+        tuner = TunerFactory.get_tuner(
+            model_type=model_type,
+            cfg=cfg_tuning,
+            X_train=X_train,
+            y_train=y_train,
+            X_val=X_val,
+            y_val=y_val,
+            num_classes=preprocessor.num_classes
+        ) # returns for ex NNTuner(cfg_tuning, X_train, y_train, X_val, y_val, num_classes) or TreeTuner...
+
         best_config = tuner.tune(num_samples=1) # 10
 
         # Train best model and get all metrics
         results = tuner.train_best_model(best_config)
 
-
-        # logging        
-        logging(artifacts, results, 'nn') # then model_type
+        # Logging        
+        logging(artifacts, results, model_type)
 
 
 if __name__ == "__main__":
     main()
 
+
+
+
+"""
+python -m src.scripts.tuning
+python -m src.scripts.tuning model_type=tree
+python -m src.scripts.tuning -m model_type=nn,tree
+"""
 
 
 #-------https://scikit-learn.org/stable/modules/generated/sklearn.metrics.roc_curve.html ; # as input true labesl and pred scores
