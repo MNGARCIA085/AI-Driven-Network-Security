@@ -160,7 +160,7 @@ class NNTuner(BaseTuner):
         # Make predictions with the trained model
         all_val_preds, all_val_labels, all_val_probs = self.predict(val_loader, model)
 
-        metrics = { # results later
+        results = {
             "accuracy": accuracy_score(all_val_labels, all_val_preds),
             "precision": precision_score(all_val_labels, all_val_preds, average=self.average, zero_division=0),
             "recall": recall_score(all_val_labels, all_val_preds, average=self.average, zero_division=0),
@@ -174,7 +174,7 @@ class NNTuner(BaseTuner):
             "model": model,
             "val_preds_proba": all_val_probs,  # for ROC
         }
-        return metrics
+        return results
 
 
     def predict(self, loader, model):

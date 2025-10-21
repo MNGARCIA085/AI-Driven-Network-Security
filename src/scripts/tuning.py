@@ -47,7 +47,7 @@ def main(cfg: DictConfig):
             y_train=y_train,
             X_val=X_val,
             y_val=y_val,
-            num_classes=preprocessor.num_classes
+            preprocessor=preprocessor,
         ) # returns for ex NNTuner(cfg_tuning, X_train, y_train, X_val, y_val, num_classes) or TreeTuner...
 
         best_config = tuner.tune(num_samples=1) # 10
