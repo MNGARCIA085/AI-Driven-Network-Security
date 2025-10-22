@@ -77,6 +77,8 @@ def logging(artifacts, results, model_type):
     mlflow.log_artifact(roc_path)
     os.remove(roc_path)
 
+    # vwe aui no estoy logueando doble
+
 
 """
 # Delete the SQLite file
