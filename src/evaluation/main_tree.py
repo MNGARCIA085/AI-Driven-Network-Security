@@ -3,16 +3,16 @@ import mlflow.pytorch
 import joblib
 
 # Assuming these are correct relative imports for your project structure
-from .nn import NNEvaluator
+from .tree import TreeEvaluator
 from .model_selection import select_best_model
 from src.preprocessors.factory import PreprocessorFactory 
-
-
-
 
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
+
+
+import mlflow.sklearn
 
 
 mlflow.set_tracking_uri("sqlite:///mlflow.db")
@@ -28,22 +28,23 @@ def main(cfg: DictConfig):
     results = select_best_model("nn_experiment")
     
     model_type = results['model_type']
-    model = mlflow.pytorch.load_model(results['model_uri'])
-    scaler = joblib.load(results['scaler_path'])
+    model = mlflow.sklearn.load_model(results['model_uri'])
+    print(model)
+    #scaler = joblib.load(results['scaler_path'])
     encoder = joblib.load(results['encoder_path'])
 
     print(model_type)
+    model_type = 'tree'
 
     # 3. Preprocess test data
-    #model_type = 'nn' # que venga dsp. del seleector, que me diga cual es el mejor modelo
     preprocessor = PreprocessorFactory.get_preprocessor(model_type, cfg, cfg.preprocessor) 
     
     # X_values is the feature matrix, y_encoded is the target variable
-    X_values, y_encoded = preprocessor.preprocess_test(df, scaler, encoder)
+    X_values, y_encoded = preprocessor.preprocess_test(df, encoder) # before -> scaler, encoder
 
 
-    # 4. Run nn evaluator
-    evaluator = NNEvaluator(model)
+    # 4. Run evaluator
+    evaluator = TreeEvaluator(model)
     
     # Original used X_test, y_test; corrected to X_values, y_encoded
     results = evaluator.evaluate(X_values, y_encoded)

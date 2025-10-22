@@ -1,16 +1,10 @@
 from ray import tune
 from ray.tune.schedulers import ASHAScheduler
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
-from sklearn.model_selection import train_test_split
 import numpy as np
-
 import ray
-
-
-
-
 from .base import BaseTuner
+from src.utils.metrics import compute_metrics
 
 
 
@@ -19,18 +13,13 @@ class TreeTuner(BaseTuner):
         super().__init__(cfg, X_train, y_train, X_val, y_val)
 
 
-
     # --- Evaluation ---
     def eval_model(self, model, X, y):
         preds = model.predict(X)
         probs = model.predict_proba(X)  # for ROC and AUC
-        metrics = {
-            "accuracy": accuracy_score(y, preds),
-            "precision": precision_score(y, preds, average=self.average, zero_division=0),
-            "recall": recall_score(y, preds, average=self.average, zero_division=0),
-            "f1": f1_score(y, preds, average=self.average, zero_division=0),
-        }
-        return metrics, preds, probs
+        metrics = compute_metrics(y, preds, self.average)
+        return {**metrics, "preds": np.array(preds), "labels": np.array(y), "probs": np.array(probs)}
+
 
     # --- Ray train function ---
     def _train_model_ray(self, config):
@@ -42,16 +31,15 @@ class TreeTuner(BaseTuner):
             max_depth=config["max_depth"],
             min_samples_split=config["min_samples_split"],
             random_state=42, #self.cfg["random_state"]
-        )
+        ) # defined in other place????????
 
         model.fit(X_train, y_train)
-        metrics, _, _ = self.eval_model(model, X_val, y_val)
+        results_val = self.eval_model(model, X_val, y_val)
+
+        # report to tune
+        tune.report({"f1": results_val['f1']})
 
 
-        f1 = metrics["f1"]
-        tune.report({"f1": f1})
-
-        
 
     # get tune config
     def get_tune_config(self):
@@ -74,16 +62,14 @@ class TreeTuner(BaseTuner):
         )
         model.fit(X_train, y_train)
 
-        metrics, val_preds, probs = self.eval_model(model, X_val, y_val)
+        results_val = self.eval_model(model, X_val, y_val)
+        results_val["val_labels"] = results_val.pop("labels")
+        results_val["val_preds"] = results_val.pop("preds")
+        results_val["val_preds_proba"] = results_val.pop("probs")
+        
         return {
             "model": model,
-            "accuracy": metrics["accuracy"],
-            "precision": metrics["precision"],
-            "recall": metrics["recall"],
-            "f1": metrics["f1"],
-            "val_preds": val_preds,
-            "val_labels": y_val,
-            "val_preds_proba": probs,
+            **results_val
         }
 
 

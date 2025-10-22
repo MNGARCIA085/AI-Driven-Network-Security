@@ -3,10 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import TensorDataset, DataLoader
 import numpy as np
-from sklearn.metrics import accuracy_score, f1_score
-
-
 from .base import BaseEvaluator
+from src.utils.metrics import compute_metrics 
+
 
 
 
@@ -18,8 +17,6 @@ class NNEvaluator(BaseEvaluator):
         self.average = average
         self.model.to(self.device)
         self.model.eval()
-
-
 
 
     def _to_loader(self, X, y=None):
@@ -63,11 +60,13 @@ class NNEvaluator(BaseEvaluator):
                 labels.extend(yb.cpu().numpy())
                 probs.extend(prob.cpu().numpy())
 
-        avg_loss = total_loss / total_samples if criterion is not None else None
-        acc = accuracy_score(labels, preds)
-        f1 = f1_score(labels, preds, average=self.average, zero_division=0)
 
-        return f1, avg_loss, acc, np.array(preds), np.array(labels), np.array(probs)
+        # compute metrics
+        metrics = compute_metrics(labels, preds, total_loss, total_samples, self.average)
+
+        # return
+        return {**metrics, 'preds': np.array(preds), 'labels':np.array(labels), 'probs':np.array(probs)}
+
 
 
 

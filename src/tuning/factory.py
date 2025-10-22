@@ -8,7 +8,7 @@ class TunerFactory:
     @staticmethod
     def get_tuner(model_type, cfg, X_train, y_train, X_val, y_val, preprocessor):
         if model_type.lower() == "tree":
-            return TreeTuner(cfg, X_train, y_train, X_val, y_val, preprocessor)
+            return TreeTuner(cfg, X_train, y_train, X_val, y_val)
         elif model_type.lower() == "nn":
             return NNTuner(cfg, X_train, y_train, X_val, y_val, preprocessor.num_classes)
         else:

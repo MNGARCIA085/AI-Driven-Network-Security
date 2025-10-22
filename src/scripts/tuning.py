@@ -55,8 +55,11 @@ def main(cfg: DictConfig):
         # Train best model and get all metrics
         results = tuner.train_best_model(best_config)
 
-        # Logging        
+        # Logging
         logging(artifacts, results, model_type)
+
+
+
 
 
 if __name__ == "__main__":

@@ -17,10 +17,14 @@ def select_best_model(experiment_name, metric="f1", higher_is_better=True):
     client = MlflowClient()
     experiment = client.get_experiment_by_name(experiment_name)
 
-    # get all runs in the experiment
+
+    # Filter by tag `data_version`
+    filter_str = "tags.data_version = 'v1'"
+
     runs = client.search_runs(
         experiment_ids=[experiment.experiment_id],
-        order_by=["metrics.f1 DESC"],  # sort by F1 descending
+        filter_string=filter_str,
+        order_by=["metrics.f1 DESC"],
     )
 
     # the first one will be the best F1
@@ -28,6 +32,8 @@ def select_best_model(experiment_name, metric="f1", higher_is_better=True):
     print("Best run ID:", best_run.info.run_id)
     print("Best F1:", best_run.data.metrics["f1"])
 
+
+    """ -> this corresponds to the saved val data
     if runs:
         best_run = runs[0]
         print("Best run ID:", best_run.info.run_id)
@@ -39,20 +45,44 @@ def select_best_model(experiment_name, metric="f1", higher_is_better=True):
             print(f"{metric_name}: {value}")
     else:
         print("No runs found!")
+    """
 
 
     run_id = best_run.info.run_id
-    run_id = "c63f08b6f1c542ee97ea16aba64cba46" # for now, make sure is a NN
-    model_uri = f"runs:/{run_id}/model"
-    # loaded_model = mlflow.pytorch.load_model(model_uri)
+    #run_id = "00cfc7deb01c4004b0e7bf1f38ef255e" # force a tree
+    
 
-    scaler_path = mlflow.artifacts.download_artifacts(
-        run_id=run_id, artifact_path="preprocessor/scaler.pkl"
-    )
-    # scaler = joblib.load(local_path); it doiesnbt exist for the trees
+
+    model_uri = f"runs:/{run_id}/model"
+
+
+
+    print(best_run.data.tags.get("model_type"))
+
+
+    try:
+        scaler_path = mlflow.artifacts.download_artifacts(
+            run_id=run_id, artifact_path="preprocessor/scaler.pkl"
+        )
+    except:
+        scaler_path = None
+
+
 
     encoder_path = mlflow.artifacts.download_artifacts(
         run_id=run_id, artifact_path="preprocessor/label_encoder.pkl"
     )
 
-    return model_uri, scaler_path, encoder_path
+    return {
+            "model_type": best_run.data.tags.get("model_type", "unknown"),
+            "model_uri": model_uri, 
+            "scaler_path": scaler_path, 
+            "encoder_path": encoder_path
+        }
+
+
+
+
+"""
+filter_str = "tags.data_version = 'v1.2' and tags.model_type = 'nn'"
+"""

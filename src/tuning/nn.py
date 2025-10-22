@@ -3,12 +3,13 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 import numpy as np
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import ray
 from .base import BaseTuner
 from ray import tune
 from ray.tune.schedulers import ASHAScheduler
 from src.models.nnet import NNModel
+from src.utils.metrics import compute_metrics
+
 
 
 
@@ -39,21 +40,9 @@ class NNTuner(BaseTuner):
         )
         return train_loader, val_loader
 
+
+
     # --- Training one epoch ---
-    def train_one_epochv0(self, model, loader, optimizer, criterion):
-        model.train()
-        total_loss = 0.0
-        for xb, yb in loader:
-            xb, yb = xb.to(self.device), yb.to(self.device)
-            optimizer.zero_grad()
-            loss = criterion(model(xb), yb)
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.item()
-        return total_loss / len(loader)
-
-
-
     def train_one_epoch(self, model, loader, optimizer, criterion):
         model.train()
         total_loss = 0.0
@@ -80,27 +69,41 @@ class NNTuner(BaseTuner):
 
 
 
-
     # --- Evaluation ---
     def eval_one_epoch(self, model, loader, criterion):
         model.eval()
         preds, labels, probs = [], [], []
         total_loss = 0.0
+        total_samples = 0
 
         with torch.no_grad():
             for xb, yb in loader:
                 xb, yb = xb.to(self.device), yb.to(self.device)
                 out = model(xb)
-                total_loss += criterion(out, yb).item()
+                batch_size = xb.size(0)
+
+                # Loss
+                loss = criterion(out, yb)
+                total_loss += loss.item() * batch_size
+                total_samples += batch_size
+
+                # Predictions
                 prob = nn.functional.softmax(out, dim=1)
                 probs.extend(prob.cpu().numpy())
                 preds.extend(out.argmax(1).cpu().numpy())
                 labels.extend(yb.cpu().numpy())
 
-        avg_loss = total_loss / len(loader) # do i use it??????; i sit okto divide by len(loader)?????
-        acc = accuracy_score(labels, preds)
-        f1 = f1_score(labels, preds, average=self.average, zero_division=0)
-        return f1, avg_loss, acc, preds, labels, np.array(probs)
+        # Use generic compute_metrics
+        metrics = compute_metrics(
+            labels=labels,
+            preds=preds,
+            total_loss=total_loss,
+            total_samples=total_samples,
+            average=self.average,
+        )
+
+        # Return metrics + raw arrays
+        return {**metrics, "preds": np.array(preds), "labels": np.array(labels), "probs": np.array(probs)}
 
 
 
@@ -119,8 +122,26 @@ class NNTuner(BaseTuner):
 
         for _ in range(self.cfg.epochs_trials):  # epochs for tuning
             self.train_one_epoch(model, train_loader, optimizer, criterion)
-            f1, _, _, _, _,_ = self.eval_one_epoch(model, val_loader, criterion)
-            tune.report({"f1": f1})
+            results = self.eval_one_epoch(model, val_loader, criterion)
+            
+            # Option 1: report just F1
+            tune.report({"f1": results["f1"]})
+            
+            """
+            # Option 2: report multiple metrics
+            tune.report({
+                "f1": results["f1"],
+                "accuracy": results["accuracy"],
+                "recall": results["recall"],
+                "precision": results["precision"]
+            })
+            
+            # Option 3: custom objective: e.g., weighted combination
+            weighted_score = 0.7 * results["recall"] + 0.3 * results["f1"]
+            tune.report({"weighted_score": weighted_score})
+            """
+
+
 
     # Tuning config
     def get_tune_config(self):
@@ -149,22 +170,22 @@ class NNTuner(BaseTuner):
         all_val_preds, all_val_labels = [], []
 
         for _ in range(self.cfg.epochs):
-            train_loss, train_acc = self.train_one_epoch(model, train_loader, optimizer, criterion)
-            f1, val_loss, val_acc, preds, labels, probs = self.eval_one_epoch(model, val_loader, criterion)
+            train_loss, train_acc = self.train_one_epoch(model, train_loader, optimizer, criterion) # then dict y results_train
+            results_val = self.eval_one_epoch(model, val_loader, criterion)
 
             train_losses.append(train_loss)
-            val_losses.append(val_loss)
+            val_losses.append(results_val['avg_loss'])
             train_accs.append(train_acc)
-            val_accs.append(val_acc)
+            val_accs.append(results_val['accuracy'])
         
         # Make predictions with the trained model
         all_val_preds, all_val_labels, all_val_probs = self.predict(val_loader, model)
 
+        # Compute validation metrics
+        metrics = compute_metrics(all_val_labels, all_val_preds, average=self.average)
+
         results = {
-            "accuracy": accuracy_score(all_val_labels, all_val_preds),
-            "precision": precision_score(all_val_labels, all_val_preds, average=self.average, zero_division=0),
-            "recall": recall_score(all_val_labels, all_val_preds, average=self.average, zero_division=0),
-            "f1": f1_score(all_val_labels, all_val_preds, average=self.average, zero_division=0),
+            **metrics,
             "train_losses": train_losses,
             "val_losses": val_losses,
             "val_accs": val_accs,
@@ -193,11 +214,66 @@ class NNTuner(BaseTuner):
 
 
 
-
-
-
-
 """
+results = {
+    "train": {
+        "losses": train_losses,
+        "accs": train_accs,
+        # add other metrics if needed
+    },
+    "val": {
+        "losses": val_losses,
+        "accs": val_accs,
+        "preds": all_val_preds,
+        "labels": all_val_labels,
+        "probs": all_val_probs,  # for ROC
+        "metrics": metrics,      # f1, precision, recall, etc.
+    },
+    "model": model,
+}
+
+
+
+from typing import TypedDict, List, Any
+
+class TrainValDict(TypedDict):
+    train: dict
+    val: dict
+    model: Any
+
+def train_best_model(...) -> TrainValDict:
+    ...
+
+
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
+
+@dataclass
+class TrainValResults:
+    train: Dict[str, List[float]]
+    val: Dict[str, Any]
+    model: Any
+
+# Example usage:
+results = TrainValResults(
+    train={
+        "losses": train_losses,
+        "accs": train_accs,
+    },
+    val={
+        "losses": val_losses,
+        "accs": val_accs,
+        "preds": all_val_preds,
+        "labels": all_val_labels,
+        "probs": all_val_probs,
+        "metrics": metrics,
+    },
+    model=model,
+)
+
+
+
+
 
 
  metrics, val_preds, val_labels, val_probs = self.eval_model(model, val_loader)

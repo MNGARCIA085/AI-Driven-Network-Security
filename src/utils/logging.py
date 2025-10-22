@@ -9,6 +9,14 @@ import os
 
 # logging functions
 def logging(artifacts, results, model_type):
+
+
+    # Tags
+    mlflow.set_tag("model_type", model_type)
+    mlflow.set_tag("data_version", "v1") # hardcoded for now
+    #mlflow.set_tag("data_version", artifacts["dvc_version"])  # human-readable
+
+
     # Common params
     mlflow.log_param("balance_factor", artifacts["balance_factor"])
     mlflow.log_param("val_size", artifacts["val_size"])
@@ -70,3 +78,29 @@ def logging(artifacts, results, model_type):
     os.remove(roc_path)
 
 
+"""
+# Delete the SQLite file
+rm mlflow.db
+
+# Delete all artifacts (by default in ./mlruns/)
+rm -rf mlruns/
+
+# Start MLflow server with SQLite backend
+mlflow server \
+    --backend-store-uri sqlite:///mlflow.db \
+    --default-artifact-root ./mlruns \
+    --host 0.0.0.0 \
+    --port 5000
+
+
+
+# Start MLflow server with SQLite backend
+mlflow server \
+    --backend-store-uri sqlite:///mlflow.db \
+    --default-artifact-root ./mlruns \
+    --host 0.0.0.0 \
+    --port 5000
+
+
+
+"""
