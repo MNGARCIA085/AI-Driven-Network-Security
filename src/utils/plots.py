@@ -41,8 +41,8 @@ def plot_acc(results):
 
 
 
-def plot_cm(results):
-    cm = confusion_matrix(results["val_labels"], results["val_preds"])
+def plot_cm(labels, preds):
+    cm = confusion_matrix(labels, preds)
     plt.figure(figsize=(6,6))
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
     plt.xlabel("Predicted")
@@ -56,9 +56,9 @@ def plot_cm(results):
 
 
 
-def plot_roc(results):
-    y_true = np.array(results["val_labels"])        # shape (n_samples,)
-    y_score = np.array(results["val_preds_proba"])  # shape (n_samples, n_classes)
+def plot_roc(labels, probs):
+    y_true = np.array(labels)        # shape (n_samples,)
+    y_score = np.array(probs)  # shape (n_samples, n_classes)
     num_classes = y_score.shape[1]
 
     # Binarize labels for multiclass One-vs-Rest ROC

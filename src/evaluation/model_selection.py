@@ -8,7 +8,7 @@ mlflow.set_tracking_uri("sqlite:///mlflow.db")
 
 # nn_experiment
 
-def select_best_model(experiment_name, metric="f1", higher_is_better=True):
+def select_best_model(experiment_name, metric="f1"):
     """
     Select best model overall
     """
@@ -19,7 +19,8 @@ def select_best_model(experiment_name, metric="f1", higher_is_better=True):
 
 
     # Filter by tag `data_version`
-    filter_str = "tags.data_version = 'v1'"
+    #filter_str = "tags.data_version = 'v1'"
+    filter_str = "run_name = 'Tuning' AND tags.data_version = 'v1'"
 
     runs = client.search_runs(
         experiment_ids=[experiment.experiment_id],
@@ -33,7 +34,53 @@ def select_best_model(experiment_name, metric="f1", higher_is_better=True):
     print("Best F1:", best_run.data.metrics["f1"])
 
 
-    """ -> this corresponds to the saved val data
+    # common part
+    run_id = best_run.info.run_id
+    #run_id = "00cfc7deb01c4004b0e7bf1f38ef255e" # force a tree; force an nn to test
+    #run_id = "6faf249e0eac4db98156628c09fccb9a" # force an NN
+
+
+    # model
+    model_uri = f"runs:/{run_id}/model"
+
+    # encoder
+    encoder_path = mlflow.artifacts.download_artifacts(
+        run_id=run_id, artifact_path="preprocessor/label_encoder.pkl"
+    )
+
+    model_type = best_run.data.tags.get("model_type")
+    #model_type = 'nn' # force nn
+    if model_type == 'nn':
+        scaler_path = mlflow.artifacts.download_artifacts(
+            run_id=run_id, artifact_path="preprocessor/scaler.pkl"
+        )
+        # return
+        return {
+            "model_type": model_type,
+            "model_uri": model_uri, 
+            "scaler_path": scaler_path, 
+            "encoder_path": encoder_path
+        }
+
+    else: # tree
+        return {
+            "model_type": model_type,
+            "model_uri": model_uri, 
+            "encoder_path": encoder_path
+        }
+
+
+
+
+
+
+"""
+filter_str = "tags.data_version = 'v1.2' and tags.model_type = 'nn'"
+"""
+
+
+
+""" -> this corresponds to the saved val data
     if runs:
         best_run = runs[0]
         print("Best run ID:", best_run.info.run_id)
@@ -46,43 +93,3 @@ def select_best_model(experiment_name, metric="f1", higher_is_better=True):
     else:
         print("No runs found!")
     """
-
-
-    run_id = best_run.info.run_id
-    #run_id = "00cfc7deb01c4004b0e7bf1f38ef255e" # force a tree
-    
-
-
-    model_uri = f"runs:/{run_id}/model"
-
-
-
-    print(best_run.data.tags.get("model_type"))
-
-
-    try:
-        scaler_path = mlflow.artifacts.download_artifacts(
-            run_id=run_id, artifact_path="preprocessor/scaler.pkl"
-        )
-    except:
-        scaler_path = None
-
-
-
-    encoder_path = mlflow.artifacts.download_artifacts(
-        run_id=run_id, artifact_path="preprocessor/label_encoder.pkl"
-    )
-
-    return {
-            "model_type": best_run.data.tags.get("model_type", "unknown"),
-            "model_uri": model_uri, 
-            "scaler_path": scaler_path, 
-            "encoder_path": encoder_path
-        }
-
-
-
-
-"""
-filter_str = "tags.data_version = 'v1.2' and tags.model_type = 'nn'"
-"""

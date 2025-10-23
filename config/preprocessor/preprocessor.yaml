@@ -1,4 +1,5 @@
 path: "data/train_val_data.csv"
+path_test: "data/test_data.csv"
 features: null  # list of features or null for all
 balance_factor: 0.2
 val_size: 0.2

@@ -10,11 +10,10 @@ import os
 # logging functions
 def logging(artifacts, results, model_type):
 
-
     # Tags
     mlflow.set_tag("model_type", model_type)
     mlflow.set_tag("data_version", "v1") # hardcoded for now
-    #mlflow.set_tag("data_version", artifacts["dvc_version"])  # human-readable
+    #mlflow.set_tag("data_version", artifacts["dvc_version"]) 
 
 
     # Common params
@@ -62,22 +61,55 @@ def logging(artifacts, results, model_type):
             os.remove(path)
     else: # trees
         mlflow.sklearn.log_model(results["model"], name="model")
-        for plot_fn in [plot_cm, plot_roc]:
-            path = plot_fn(results)
-            mlflow.log_artifact(path)
-            os.remove(path)
 
 
     # Common plots
-    cm_path = plot_cm(results)
+    cm_path = plot_cm(results["val_labels"], results["val_preds"])  # later results-->val->labels
     mlflow.log_artifact(cm_path)
     os.remove(cm_path)
 
-    roc_path = plot_roc(results)
+    roc_path = plot_roc(results["val_labels"], results["val_preds_proba"])
     mlflow.log_artifact(roc_path)
     os.remove(roc_path)
 
-    # vwe aui no estoy logueando doble
+
+
+
+# log test results
+def log_test_results(results):
+    with mlflow.start_run(run_name="test_evaluation"):
+
+        # tags
+        mlflow.set_tag("dataset", "test")
+        mlflow.set_tag("data_version", "v1")
+
+        mlflow.log_param("model_type", results['model_type'])
+
+
+        # Metrics (shared)
+        for m in ["accuracy", "precision", "recall", "f1"]:
+            if m in results:
+                mlflow.log_metric(m, results[m])
+
+        # Plots
+        cm_path = plot_cm(results['labels'], results['preds'])
+        mlflow.log_artifact(cm_path)
+        os.remove(cm_path)
+
+        roc_path = plot_roc(results['labels'], results['probs'])
+        mlflow.log_artifact(roc_path)
+        os.remove(roc_path)
+
+
+
+
+
+
+
+
+
+
+
 
 
 """

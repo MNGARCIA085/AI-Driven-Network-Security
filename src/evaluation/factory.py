@@ -8,6 +8,6 @@ class EvaluatorFactory:
         if model_type.lower() == "tree":
             return TreeEvaluator(model)
         elif model_type.lower() == "nn":
-            return NNEvaluator(mddel)
+            return NNEvaluator(model)
         else:
             raise ValueError(f"Unknown tuner type: {model_type}")

@@ -3,19 +3,28 @@ import joblib
 import hydra
 import mlflow.pytorch 
 import mlflow.sklearn
+import os
 from omegaconf import DictConfig, OmegaConf
-from .model_selection import select_best_model
 from src.preprocessors.factory import PreprocessorFactory 
-from .factory import EvaluatorFactory
+from src.evaluation.model_selection import select_best_model
+from src.evaluation.factory import EvaluatorFactory
+from src.utils.logging import log_test_results
 
 
 mlflow.set_tracking_uri("sqlite:///mlflow.db")
 
+# Set default folder for artifacts
+artifact_dir = os.path.abspath("./mlruns")  # choose any folder
+os.makedirs(artifact_dir, exist_ok=True)
 
-@hydra.main(config_path="../../config", config_name="config", version_base=None)
+# ensures artifact path is set
+mlflow.set_experiment("nn_experiment")
+
+
+@hydra.main(config_path="../config", config_name="config", version_base=None)
 def main(cfg: DictConfig):
     # 1. Load and preprocess data
-    path = "data/test_data.csv"
+    path = cfg.preprocessor.path_test
     df = pd.read_csv(path)
 
     # 2. Load model, scaler, encoder from the best run
@@ -54,10 +63,12 @@ def main(cfg: DictConfig):
     
     # Original used X_test, y_test; corrected to X_values, y_encoded
     results = evaluator.evaluate(X_values, y_encoded)
-    print(results)
 
 
-    # roc curve and cm if needed, maybe logging
+    # Logging
+    results['model_type'] = model_type
+    log_test_results(results)
+
 
 
 

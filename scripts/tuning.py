@@ -22,7 +22,7 @@ mlflow.set_experiment("nn_experiment")
 
 
 
-@hydra.main(config_path="../../config", config_name="config", version_base=None)
+@hydra.main(config_path="../config", config_name="config", version_base=None)
 def main(cfg: DictConfig):
 
 
