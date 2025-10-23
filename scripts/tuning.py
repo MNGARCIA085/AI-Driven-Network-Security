@@ -75,5 +75,12 @@ python -m src.scripts.tuning -m model_type=nn,tree
 """
 
 
-#-------https://scikit-learn.org/stable/modules/generated/sklearn.metrics.roc_curve.html ; # as input true labesl and pred scores
-# desconfiar!!!! roc too good
+# see later // training
+# python train.py -m models=tree,nn,rf
+# python train.py -m models=tree,nn,rf hydra/launcher=submitit_local
+# python train.py -m models=tree,nn lr=0.001,0.01 batch_size=32,64
+
+
+
+
+

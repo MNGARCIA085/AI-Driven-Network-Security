@@ -10,7 +10,7 @@ from src.utils.metrics import compute_metrics
 
 
 class NNEvaluator(BaseEvaluator):
-    def __init__(self, model, device="cpu", batch_size=32, average="macro"):
+    def __init__(self, model, device="cpu", batch_size=32, average="weighted"):
         self.model = model
         self.device = device
         self.batch_size = batch_size

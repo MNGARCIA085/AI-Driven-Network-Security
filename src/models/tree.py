@@ -2,11 +2,11 @@ from sklearn.tree import DecisionTreeClassifier
 
 
 
-def tree_model(cfg, model_cfg):
-    # receives: tree confg and global_cfg
+def TreeModel(criterion, max_depth, min_samples_split, random_state):
     tree = DecisionTreeClassifier(
-        criterion=model_cfg.criterion,
-        max_depth=model_cfg.max_depth,    
-        random_state=cfg.random_state
+        criterion=criterion,
+        max_depth=max_depth,    
+        min_samples_split=min_samples_split,
+        random_state=random_state
     )
     return tree

@@ -1,6 +1,6 @@
 import mlflow
 import mlflow.sklearn
-from .plots import plot_acc, plot_cm, plot_roc, plot_loss
+from .plots import plot_cm, plot_roc, plot_train_val
 import joblib
 import os
 
@@ -52,13 +52,18 @@ def logging(artifacts, results, model_type):
 
     # Model-specific logs
     if model_type == "nn":
-    	# Model
+        # Model
         mlflow.pytorch.log_model(results["model"], artifact_path="model")
+        
         # training curves
-        for plot_fn in [plot_loss, plot_acc]:
-            path = plot_fn(results)
-            mlflow.log_artifact(path)
-            os.remove(path)
+        loss_path = plot_train_val(results['train_losses'], results['val_losses'], "loss_curve.png", 'Loss')
+        mlflow.log_artifact(loss_path)
+        os.remove(loss_path)
+
+        acc_path = plot_train_val(results['train_accs'], results['val_accs'], "acc_curve.png", 'Accuracy')
+        mlflow.log_artifact(acc_path)
+        os.remove(acc_path)  
+    
     else: # trees
         mlflow.sklearn.log_model(results["model"], name="model")
 
@@ -99,9 +104,6 @@ def log_test_results(results):
         roc_path = plot_roc(results['labels'], results['probs'])
         mlflow.log_artifact(roc_path)
         os.remove(roc_path)
-
-
-
 
 
 

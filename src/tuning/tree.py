@@ -5,7 +5,7 @@ import numpy as np
 import ray
 from .base import BaseTuner
 from src.utils.metrics import compute_metrics
-
+from src.models.tree import TreeModel
 
 
 class TreeTuner(BaseTuner):
@@ -26,12 +26,12 @@ class TreeTuner(BaseTuner):
         X_train, y_train = ray.get(self.X_train_id), ray.get(self.y_train_id)
         X_val, y_val = ray.get(self.X_val_id), ray.get(self.y_val_id)
 
-        model = DecisionTreeClassifier(
+        model = TreeModel(
             criterion=config["criterion"],
             max_depth=config["max_depth"],
             min_samples_split=config["min_samples_split"],
-            random_state=42, #self.cfg["random_state"]
-        ) # defined in other place????????
+            random_state=42,
+        )
 
         model.fit(X_train, y_train)
         results_val = self.eval_model(model, X_val, y_val)
@@ -54,12 +54,13 @@ class TreeTuner(BaseTuner):
         X_train, y_train = ray.get(self.X_train_id), ray.get(self.y_train_id)
         X_val, y_val = ray.get(self.X_val_id), ray.get(self.y_val_id)
 
-        model = DecisionTreeClassifier(
+        model = TreeModel(
             criterion=config["criterion"],
             max_depth=config["max_depth"],
             min_samples_split=config["min_samples_split"],
-            random_state=42,   #self.cfg["random_state"]
+            random_state=42,
         )
+
         model.fit(X_train, y_train)
 
         results_val = self.eval_model(model, X_val, y_val)
@@ -71,7 +72,6 @@ class TreeTuner(BaseTuner):
             "model": model,
             **results_val
         }
-
 
 
 

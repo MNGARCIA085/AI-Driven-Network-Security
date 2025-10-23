@@ -7,41 +7,46 @@ import numpy as np
 
 
 
-
-def plot_loss(results):
-    plt.figure()
-    plt.plot(results["train_losses"], label="train_loss")
-    plt.plot(results["val_losses"], label="val_loss")
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.legend()
-    train_val_loss_path = "loss_curve.png"
-    plt.savefig(train_val_loss_path)
-    plt.close()
-    return train_val_loss_path
+def plot_train_val(train_values, val_values, save_path, ylabel, xlabel="Epoch"):
+    """
+    Plot training and validation curves (it can be for loss or accs)
     
-
-
-
-
-
-def plot_acc(results):
-    # Validation accuracy curve
+    Args:
+        train_values (list or array): Training values per epoch.
+        val_values (list or array): Validation values per epoch.
+        ylabel (str): Label for y-axis
+        xlabel (str): Label for x-axis (default "Epoch").
+        save_path (str): File path to save the plot.
+        
+    Returns:
+        str: The path where the plot was saved.
+    """
     plt.figure()
-    plt.plot(results["train_accs"], label="train_accuracy")
-    plt.plot(results["val_accs"], label="val_accuracy")
-    plt.xlabel("Epoch")
-    plt.ylabel("Accuracy")
+    plt.plot(train_values, label=f"Train {ylabel}")
+    plt.plot(val_values, label=f"Validation {ylabel}")
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
     plt.legend()
-    val_acc_path = "val_acc_curve.png"
-    plt.savefig(val_acc_path)
+    plt.grid(True)
+    plt.savefig(save_path)
     plt.close()
-    return val_acc_path
-    
+    return save_path
+
+
 
 
 
 def plot_cm(labels, preds):
+    """
+    Plot and save a confusion matrix for classification results.
+
+    Args:
+        labels (array-like): True class labels.
+        preds (array-like): Predicted class labels by the model.
+
+    Returns:
+        str: The file path where the confusion matrix image was saved.
+    """
     cm = confusion_matrix(labels, preds)
     plt.figure(figsize=(6,6))
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
@@ -57,7 +62,18 @@ def plot_cm(labels, preds):
 
 
 def plot_roc(labels, probs):
-    y_true = np.array(labels)        # shape (n_samples,)
+    """
+    Plot and save ROC curves for a multiclass classification task using one-vs-rest approach.
+
+    Args:
+        labels (array-like): True class labels (integers from 0 to n_classes-1).
+        probs (array-like): Predicted probabilities with shape (n_samples, n_classes).
+        class_names (list, optional): List of class names for labeling the curves. Defaults to None.
+
+    Returns:
+        str: The file path where the ROC curves image was saved.
+    """
+    y_true = np.array(labels)  # shape (n_samples,)
     y_score = np.array(probs)  # shape (n_samples, n_classes)
     num_classes = y_score.shape[1]
 

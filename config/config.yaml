@@ -2,6 +2,7 @@ defaults:
   - preprocessor: preprocessor
   - models: tree # change later
   - tuning: nn
+  - evaluation: evaluation
 
 
 model_type: "nn"  # nn, tree, rf, xgboost, etc.
