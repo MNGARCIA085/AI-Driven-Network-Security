@@ -1,2 +1,0 @@
-criterion: "gini" # or entropy
-max_depth: 10

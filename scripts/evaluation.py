@@ -59,7 +59,7 @@ def main(cfg: DictConfig):
 
 
     # 4. Run evaluator
-    evaluator = EvaluatorFactory.get_evaluator(model_type, model)
+    evaluator = EvaluatorFactory.get_evaluator(model_type, cfg.evaluation, model)
     
     # Original used X_test, y_test; corrected to X_values, y_encoded
     results = evaluator.evaluate(X_values, y_encoded)

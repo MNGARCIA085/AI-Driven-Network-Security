@@ -2,3 +2,4 @@ metrics:
   average: "weighted"  # could be "macro", "micro", "weighted"
   top_k: 5
   report: true
+batch_size: 32

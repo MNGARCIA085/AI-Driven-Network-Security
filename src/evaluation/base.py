@@ -3,8 +3,10 @@
 
 
 class BaseEvaluator:
-    def __init__(self, model):
+    def __init__(self, cfg, model):
+        # cfg -> eval config
         self.model = model
+        self.average = cfg.metrics.average
 
 
     def evaluate(self, X, y):

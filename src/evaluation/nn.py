@@ -9,12 +9,12 @@ from src.utils.metrics import compute_metrics
 
 
 
-class NNEvaluator(BaseEvaluator):
-    def __init__(self, model, device="cpu", batch_size=32, average="weighted"):
+class NNEvaluator(BaseEvaluator):    
+    def __init__(self, cfg, model):
+        super().__init__(cfg, model)
         self.model = model
-        self.device = device
-        self.batch_size = batch_size
-        self.average = average
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.batch_size = cfg.batch_size
         self.model.to(self.device)
         self.model.eval()
 

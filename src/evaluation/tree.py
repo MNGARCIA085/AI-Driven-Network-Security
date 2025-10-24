@@ -6,9 +6,8 @@ from .base import BaseEvaluator
 import numpy as np
 
 class TreeEvaluator(BaseEvaluator):
-    def __init__(self, model, average="weighted"):
-        self.model = model
-        self.average = average
+    def __init__(self, cfg, model):
+        super().__init__(cfg, model)
 
     def evaluate(self, X, y, probs=None):
         preds = self.model.predict(X)
