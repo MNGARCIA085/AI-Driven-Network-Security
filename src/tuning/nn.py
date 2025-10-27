@@ -10,6 +10,8 @@ from ray.tune.schedulers import ASHAScheduler
 from src.models.nnet import NNModel
 from src.utils.metrics import compute_metrics
 from src.utils.results import Results, Metrics
+from .callbacks import EarlyStopping,LRReducer
+
 
 
 
@@ -166,25 +168,50 @@ class NNTuner(BaseTuner):
         criterion = nn.CrossEntropyLoss()
         train_loader, val_loader = self.create_loaders(config["batch_size"])
 
+        # learning rate scheduler
+        lr_scheduler = LRReducer(optimizer, mode="max", factor=0.5, patience=3)
+
         train_losses, val_losses, train_accs, val_accs = [], [], [], []
-        all_val_preds, all_val_labels = [], []
+        best_val_metric = -np.inf
+        best_model_state = None
+        early_stopping = EarlyStopping(patience=5, mode="max")  
 
-        for _ in range(self.cfg.epochs):
-            train_loss, train_acc = self.train_one_epoch(model, train_loader, optimizer, criterion) # then dict y results_train
+        for epoch in range(self.cfg.epochs):
+            # --- Training ---
+            train_loss, train_acc = self.train_one_epoch(model, train_loader, optimizer, criterion)
+
+            # --- Validation ---
             results_val = self.eval_one_epoch(model, val_loader, criterion)
+            val_f1 = results_val["f1"]
 
+            # --- Logging ---
             train_losses.append(train_loss)
             val_losses.append(results_val['avg_loss'])
             train_accs.append(train_acc)
             val_accs.append(results_val['accuracy'])
-        
-        # Make predictions with the trained model
-        all_val_preds, all_val_labels, all_val_probs = self.predict(val_loader, model)
 
-        # Compute validation metrics
+            # --- Scheduler step (optional) ---
+            lr_scheduler.step(results_val["f1"])
+
+            # --- Check for best model ---
+            if val_f1 > best_val_metric:
+                best_val_metric = val_f1
+                best_model_state = model.state_dict()  # save best weights
+
+            # --- Early stopping check ---
+            early_stopping(val_f1) # monitor F1
+            if early_stopping.stop:
+                print(f"[EarlyStopping] Stopping at epoch {epoch+1}")
+                break
+
+        # --- Load best model weights ---
+        model.load_state_dict(best_model_state)
+
+        # --- Make predictions with best model ---
+        all_val_preds, all_val_labels, all_val_probs = self.predict(val_loader, model)
         val_metrics = compute_metrics(all_val_labels, all_val_preds, average=self.average)
-        
-        # return
+
+        # --- Return results ---
         return self._build_results(
             model=model,
             train_losses=train_losses,
@@ -196,6 +223,7 @@ class NNTuner(BaseTuner):
             val_probs=all_val_probs,
             val_metrics=val_metrics,
         )
+
 
 
     def predict(self, loader, model):

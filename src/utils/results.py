@@ -56,3 +56,12 @@ results.model = model
 return results.to_dict() # if needed
 """
 
+"""
+for test
+@dataclass
+class TestResults:
+    preds: List[Any]
+    labels: List[Any]
+    probs: List[Any]
+    metrics: Metrics = field(default_factory=Metrics)
+"""
