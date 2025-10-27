@@ -46,34 +46,34 @@ def logging(artifacts, results, model_type):
 
     # Metrics (shared)
     for m in ["accuracy", "precision", "recall", "f1"]:
-        if m in results:
-            mlflow.log_metric(m, results[m])
+        mlflow.log_metric(m, getattr(results.val.metrics, m))
+
 
 
     # Model-specific logs
     if model_type == "nn":
         # Model
-        mlflow.pytorch.log_model(results["model"], artifact_path="model")
+        mlflow.pytorch.log_model(results.model, artifact_path="model")
         
         # training curves
-        loss_path = plot_train_val(results['train_losses'], results['val_losses'], "loss_curve.png", 'Loss')
+        loss_path = plot_train_val(results.train.losses, results.val.losses, "loss_curve.png", 'Loss')
         mlflow.log_artifact(loss_path)
         os.remove(loss_path)
 
-        acc_path = plot_train_val(results['train_accs'], results['val_accs'], "acc_curve.png", 'Accuracy')
+        acc_path = plot_train_val(results.train.accs, results.val.accs, "acc_curve.png", 'Accuracy')
         mlflow.log_artifact(acc_path)
         os.remove(acc_path)  
     
     else: # trees
-        mlflow.sklearn.log_model(results["model"], name="model")
+        mlflow.sklearn.log_model(results.model, name="model")
 
 
     # Common plots
-    cm_path = plot_cm(results["val_labels"], results["val_preds"])  # later results-->val->labels
+    cm_path = plot_cm(results.val.labels, results.val.preds)
     mlflow.log_artifact(cm_path)
     os.remove(cm_path)
 
-    roc_path = plot_roc(results["val_labels"], results["val_preds_proba"])
+    roc_path = plot_roc(results.val.labels, results.val.probs)
     mlflow.log_artifact(roc_path)
     os.remove(roc_path)
 

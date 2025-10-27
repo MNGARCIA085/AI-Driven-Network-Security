@@ -9,7 +9,7 @@ from ray import tune
 from ray.tune.schedulers import ASHAScheduler
 from src.models.nnet import NNModel
 from src.utils.metrics import compute_metrics
-
+from src.utils.results import Results, Metrics
 
 
 
@@ -154,7 +154,7 @@ class NNTuner(BaseTuner):
 
 
     # --- Train best model ---
-    def train_best_model(self, config):
+    def train_best_model(self, config) -> Results:
         model = NNModel(
             input_size=self.input_size,
             num_classes=self.num_classes,
@@ -182,20 +182,20 @@ class NNTuner(BaseTuner):
         all_val_preds, all_val_labels, all_val_probs = self.predict(val_loader, model)
 
         # Compute validation metrics
-        metrics = compute_metrics(all_val_labels, all_val_preds, average=self.average)
-
-        results = {
-            **metrics,
-            "train_losses": train_losses,
-            "val_losses": val_losses,
-            "val_accs": val_accs,
-            "train_accs": train_accs,
-            "val_preds": all_val_preds,
-            "val_labels": all_val_labels,
-            "model": model,
-            "val_preds_proba": all_val_probs,  # for ROC
-        }
-        return results
+        val_metrics = compute_metrics(all_val_labels, all_val_preds, average=self.average)
+        
+        # return
+        return self._build_results(
+            model=model,
+            train_losses=train_losses,
+            train_accs=train_accs,
+            val_losses=val_losses,
+            val_accs=val_accs,
+            val_preds=all_val_preds,
+            val_labels=all_val_labels,
+            val_probs=all_val_probs,
+            val_metrics=val_metrics,
+        )
 
 
     def predict(self, loader, model):
@@ -212,100 +212,6 @@ class NNTuner(BaseTuner):
         return np.array(preds), np.array(labels), np.array(probs)
 
 
-
-
-"""
-results = {
-    "train": {
-        "losses": train_losses,
-        "accs": train_accs,
-        # add other metrics if needed
-    },
-    "val": {
-        "losses": val_losses,
-        "accs": val_accs,
-        "preds": all_val_preds,
-        "labels": all_val_labels,
-        "probs": all_val_probs,  # for ROC
-        "metrics": metrics,      # f1, precision, recall, etc.
-    },
-    "model": model,
-}
-
-
-
-from typing import TypedDict, List, Any
-
-class TrainValDict(TypedDict):
-    train: dict
-    val: dict
-    model: Any
-
-def train_best_model(...) -> TrainValDict:
-    ...
-
-
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
-
-@dataclass
-class TrainValResults:
-    train: Dict[str, List[float]]
-    val: Dict[str, Any]
-    model: Any
-
-# Example usage:
-results = TrainValResults(
-    train={
-        "losses": train_losses,
-        "accs": train_accs,
-    },
-    val={
-        "losses": val_losses,
-        "accs": val_accs,
-        "preds": all_val_preds,
-        "labels": all_val_labels,
-        "probs": all_val_probs,
-        "metrics": metrics,
-    },
-    model=model,
-)
-
-
-
-
-
-
- metrics, val_preds, val_labels, val_probs = self.eval_model(model, val_loader)
-        return {
-            "model": model,
-            **metrics,
-            "val_preds": val_preds,
-            "val_labels": val_labels,
-            "val_preds_proba": val_probs
-        }
-
-def eval_model(self, model, loader):
-        model.eval()
-        preds, labels, probs = [], [], []
-        with torch.no_grad():
-            for xb, yb in loader:
-                xb, yb = xb.to(self.device), yb.to(self.device)
-                out = model(xb)
-                prob = nn.functional.softmax(out, dim=1)
-                probs.extend(prob.cpu().numpy())
-                preds.extend(out.argmax(1).cpu().numpy())
-                labels.extend(yb.cpu().numpy())
-
-        metrics = {
-            "accuracy": accuracy_score(labels, preds),
-            "precision": precision_score(labels, preds, average=self.average, zero_division=0),
-            "recall": recall_score(labels, preds, average=self.average, zero_division=0),
-            "f1": f1_score(labels, preds, average=self.average, zero_division=0)
-        }
-        return metrics, np.array(preds), np.array(labels), np.array(probs)
-
-"""
 
 
 

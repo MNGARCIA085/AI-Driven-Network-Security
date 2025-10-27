@@ -27,15 +27,12 @@ class NNEvaluator(BaseEvaluator):
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
 
 
-
     def evaluate(self, X, y):
         """
         Evaluate on labeled data.
         Returns: f1, avg_loss, acc, preds, labels, probs
         """
-
         criterion = nn.CrossEntropyLoss() # check later how do I pass it
-
 
         loader = self._to_loader(X, y)
         preds, labels, probs = [], [], []

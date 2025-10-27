@@ -2,6 +2,9 @@ import ray
 from abc import ABC, abstractmethod
 from ray import tune
 from ray.tune.schedulers import ASHAScheduler
+from src.utils.results import Results, Metrics
+
+
 
 class BaseTuner(ABC):
     """
@@ -29,7 +32,7 @@ class BaseTuner(ABC):
         pass
 
     @abstractmethod
-    def train_best_model(self, config):
+    def train_best_model(self, config) -> Results:
         """Train a model with the given config and return metrics + model."""
         pass
 
@@ -58,5 +61,42 @@ class BaseTuner(ABC):
         results = tuner.fit()
         best = results.get_best_result(metric="f1", mode="max")
         return best.config
+
+
+
+    def _build_results(
+        self,
+        model,
+        train_losses=None,
+        train_accs=None,
+        val_losses=None,
+        val_accs=None,
+        val_preds=None,
+        val_labels=None,
+        val_probs=None,
+        val_metrics=None,
+    ) -> Results:
+        results = Results()
+
+        if train_losses is not None:
+            results.train.losses = train_losses
+        if train_accs is not None:
+            results.train.accs = train_accs
+
+        if val_losses is not None:
+            results.val.losses = val_losses
+        if val_accs is not None:
+            results.val.accs = val_accs
+        if val_preds is not None:
+            results.val.preds = val_preds
+        if val_labels is not None:
+            results.val.labels = val_labels
+        if val_probs is not None:
+            results.val.probs = val_probs
+        if val_metrics is not None:
+            results.val.metrics = Metrics(**val_metrics)
+
+        results.model = model
+        return results
 
 
