@@ -74,7 +74,7 @@ class NNPreprocessor(BasePreprocessor):
         self.df = df.copy()
         (
             self.basic_preprocessing()
-                .combine_rare_labels()  # 🔹 ensure label categories match training
+                .combine_rare_labels()  # ensure label categories match training
         )
 
         df = self.df
@@ -100,14 +100,25 @@ class NNPreprocessor(BasePreprocessor):
     # 3. Inference preprocessing (unlabeled dataset)
     # ---------------------------
     def preprocess_inference(self, df, scaler, features=None):
+
+
+        print('sadsad sadsadsapdsahdhsaidhisahdihsioda')
+
         """Preprocess new unlabeled data (no fitting, no label encoding)."""
         if scaler is None: # or label_encoder is None: # or self.features is None:
             raise ValueError("Preprocessor missing fitted scaler, encoder, or feature list.")
 
         self.df = df.copy()
+
+        print('sdfdsfdsfs')
+
         self.basic_preprocessing()
 
-        df = self.df.drop('Label', axis=1)
+        print('vamos')
+
+        print(df)
+
+        df = self.df.drop('Label', axis=1) if 'Label' in self.df.columns else self.df
         # -> for later df = self.df[self.features]; now i already pass it ok (without the label)
 
         df = pd.DataFrame(scaler.transform(df)) #, columns=self.features)
@@ -125,7 +136,6 @@ class NNPreprocessor(BasePreprocessor):
 
         df = pd.DataFrame([sample]) if not isinstance(sample, pd.DataFrame) else sample
         self.df = df.copy()
-        
 
         #self.basic_preprocessing() .> not needed here, i already pass it ok
         #df = self.df[self.features]
@@ -141,14 +151,6 @@ class NNPreprocessor(BasePreprocessor):
 
 
 
-"""
-train_data, artifacts = prep.preprocess()
-
-mlflow.log_param("num_features", len(artifacts["features"]))
-mlflow.log_param("num_classes", prep.num_classes)
-mlflow.log_artifact("scaler.pkl")
-mlflow.log_artifact("encoder.pkl")
-"""
 
 
 

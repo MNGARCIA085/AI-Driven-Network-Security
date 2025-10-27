@@ -17,10 +17,7 @@ class BasePreprocessor(ABC):
         self.val_size = pre_cfg.val_size
         self.random_state = global_cfg.random_state
         self.scaler_type = pre_cfg.scaler_type  # 'standard', 'minmax', 'robust', 'none'
-
-
-        self.scaler = None # if not passed -> check!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+        self.scaler = None
 
 
         # Data placeholders
@@ -48,7 +45,9 @@ class BasePreprocessor(ABC):
         df.replace([np.inf, -np.inf], np.nan, inplace=True)
         df = df.dropna()
         if self.features:
-            df = df[self.features]
+            # keep only columns that exist
+            existing_features = [f for f in self.features if f in df.columns]
+            df = df[existing_features]
         self.df = df
         return self
 
@@ -176,25 +175,3 @@ class BasePreprocessor(ABC):
         """Preprocess a single new sample (1 row or dict)."""
         pass
 
-
-
-
-
-"""
-import mlflow
-
-artifacts = pre.get_artifacts()
-
-with mlflow.start_run():
-    # Log numeric and string metadata
-    mlflow.log_param("balance_factor", artifacts["balance_factor"])
-    mlflow.log_param("val_size", artifacts["val_size"])
-    
-    # Log class distributions as JSON
-    mlflow.log_dict(artifacts["class_dist_before_smote"], "class_dist_before_smote.json")
-    mlflow.log_dict(artifacts["class_dist_after_smote"], "class_dist_after_smote.json")
-    
-    # Optionally log shapes
-    mlflow.log_param("train_shape", str(artifacts["train_shape"]))
-    mlflow.log_param("val_shape", str(artifacts["val_shape"]))
-"""
