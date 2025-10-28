@@ -66,8 +66,7 @@ def main(cfg: DictConfig):
 
 
     # Logging
-    results['model_type'] = model_type
-    log_test_results(results)
+    log_test_results(model_type, results)
 
 
 

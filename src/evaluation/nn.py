@@ -5,7 +5,7 @@ from torch.utils.data import TensorDataset, DataLoader
 import numpy as np
 from .base import BaseEvaluator
 from src.utils.metrics import compute_metrics 
-
+from src.utils.results import TestResults
 
 
 
@@ -27,7 +27,7 @@ class NNEvaluator(BaseEvaluator):
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
 
 
-    def evaluate(self, X, y):
+    def evaluate(self, X, y) -> TestResults:
         """
         Evaluate on labeled data.
         Returns: f1, avg_loss, acc, preds, labels, probs
@@ -62,7 +62,16 @@ class NNEvaluator(BaseEvaluator):
         metrics = compute_metrics(labels, preds, total_loss, total_samples, self.average)
 
         # return
-        return {**metrics, 'preds': np.array(preds), 'labels':np.array(labels), 'probs':np.array(probs)}
+        return self._build_results(
+            metrics=metrics,
+            preds=preds,
+            probs=probs,
+            labels=labels
+        )
+
+
+
+
 
 
 

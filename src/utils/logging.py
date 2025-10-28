@@ -49,7 +49,6 @@ def logging(artifacts, results, model_type):
         mlflow.log_metric(m, getattr(results.val.metrics, m))
 
 
-
     # Model-specific logs
     if model_type == "nn":
         # Model
@@ -81,27 +80,25 @@ def logging(artifacts, results, model_type):
 
 
 # log test results
-def log_test_results(results):
+def log_test_results(model_type, results):
     with mlflow.start_run(run_name="test_evaluation"):
 
         # tags
         mlflow.set_tag("dataset", "test")
         mlflow.set_tag("data_version", "v1")
 
-        mlflow.log_param("model_type", results['model_type'])
-
+        mlflow.log_param("model_type", model_type)
 
         # Metrics (shared)
         for m in ["accuracy", "precision", "recall", "f1"]:
-            if m in results:
-                mlflow.log_metric(m, results[m])
+            mlflow.log_metric(m, getattr(results.metrics, m))
 
         # Plots
-        cm_path = plot_cm(results['labels'], results['preds'])
+        cm_path = plot_cm(results.labels, results.preds)
         mlflow.log_artifact(cm_path)
         os.remove(cm_path)
 
-        roc_path = plot_roc(results['labels'], results['probs'])
+        roc_path = plot_roc(results.labels, results.probs)
         mlflow.log_artifact(roc_path)
         os.remove(roc_path)
 

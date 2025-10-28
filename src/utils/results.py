@@ -9,6 +9,7 @@ class Metrics:
     f1: Optional[float] = None
     precision: Optional[float] = None
     recall: Optional[float] = None
+    avg_loss: Optional[float] = None # new; only for NNs
 
 
 @dataclass
@@ -46,22 +47,16 @@ class Results:
         }
 
 
-"""
-results = Results()
-results.val.preds = val_preds
-results.val.labels = val_labels
-results.val.probs = val_probs
-results.val.metrics = Metrics(acc=val_acc, f1=val_f1)
-results.model = model
-return results.to_dict() # if needed
-"""
-
-"""
-for test
 @dataclass
 class TestResults:
     preds: List[Any]
     labels: List[Any]
     probs: List[Any]
     metrics: Metrics = field(default_factory=Metrics)
-"""
+
+
+
+
+
+
+
