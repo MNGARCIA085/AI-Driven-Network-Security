@@ -6,7 +6,7 @@ import mlflow.sklearn
 import os
 from omegaconf import DictConfig, OmegaConf
 from src.preprocessors.factory import PreprocessorFactory 
-from src.evaluation.model_selection import select_best_model
+from src.utils.model_selection import select_best_model
 from src.evaluation.factory import EvaluatorFactory
 from src.utils.logging import log_test_results
 

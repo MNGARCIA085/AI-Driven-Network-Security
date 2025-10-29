@@ -100,23 +100,13 @@ class NNPreprocessor(BasePreprocessor):
     # 3. Inference preprocessing (unlabeled dataset)
     # ---------------------------
     def preprocess_inference(self, df, scaler, features=None):
-
-
-        print('sadsad sadsadsapdsahdhsaidhisahdihsioda')
-
         """Preprocess new unlabeled data (no fitting, no label encoding)."""
         if scaler is None: # or label_encoder is None: # or self.features is None:
             raise ValueError("Preprocessor missing fitted scaler, encoder, or feature list.")
 
         self.df = df.copy()
 
-        print('sdfdsfdsfs')
-
         self.basic_preprocessing()
-
-        print('vamos')
-
-        print(df)
 
         df = self.df.drop('Label', axis=1) if 'Label' in self.df.columns else self.df
         # -> for later df = self.df[self.features]; now i already pass it ok (without the label)
