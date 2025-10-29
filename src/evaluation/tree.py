@@ -18,7 +18,7 @@ class TreeEvaluator(BaseEvaluator):
             metrics=metrics,
             preds=preds,
             probs=probs,
-            labels=labels
+            labels=y
         )
 
 

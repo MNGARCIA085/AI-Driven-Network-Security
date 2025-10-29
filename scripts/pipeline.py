@@ -1,0 +1,80 @@
+import subprocess
+import mlflow
+import joblib
+import os
+import hydra
+from omegaconf import DictConfig, OmegaConf
+
+
+
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
+
+# Set default folder for artifacts
+artifact_dir = os.path.abspath("./mlruns")  # choose any folder
+os.makedirs(artifact_dir, exist_ok=True)
+
+# ensures artifact path is set
+mlflow.set_experiment("nn_experiment")
+
+
+@hydra.main(config_path="../config", config_name="config", version_base=None)
+def main(cfg: DictConfig):
+    # List of preprocessor variants you want to try
+    val_sizes = ".1, .2"
+    balances_factors = ".2"
+    scaler_types = "standard"
+
+
+    # Tuning different models
+    model_types = "nn,tree"
+
+
+    cmds = [
+        "python",
+        "-m",
+        "scripts.tuning",
+        "-m", # --multirun
+        f"model_type={model_types}",
+        f"preprocessor.val_size={val_sizes}",
+        f"preprocessor.balance_factor={balances_factors}",
+        f"preprocessor.scaler_type={scaler_types}"
+    ]
+    
+    # Pass the list
+    subprocess.run(cmds, check=True)
+
+
+
+    # call evaluate script
+    cmds_eval = [
+        "python",
+        "-m",
+        "scripts.evaluation",
+    ]
+    
+    # Pass the list
+    subprocess.run(cmds_eval, check=True)
+
+
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
+"""
+python -m scripts.tuning --multirun \
+    model_type=nn,tree \
+    preprocessor.val_size=0.1,0.2,0.4 \
+    preprocessor.scaler_type=standard,minma
+"""
+
+
+
+
+
+#python -m scripts.tuning -m model_type=nn,tree preprocessor.val_size=.4,.6

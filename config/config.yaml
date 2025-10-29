@@ -2,11 +2,15 @@ defaults:
   - preprocessor: preprocessor
   - tuning: nn
   - evaluation: evaluation
+  - override hydra/launcher: joblib
+  - _self_
 
 
 model_type: "nn"  # nn, tree, rf, xgboost, etc.
 random_state: 42
 batch_size: 64
 experiment_name: network_security
-
-
+hydra:
+  #verbose: true
+  launcher:
+    n_jobs: 2

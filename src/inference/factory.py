@@ -5,12 +5,6 @@ from .nn import NNPredictor
 from .tree import TreePredictor
 
 
-
-
-
-
-
-
 class PredictorFactory:
     @staticmethod
     def get_predictor(model_type, model, encoder, scaler=None, device="cpu"):
