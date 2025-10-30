@@ -174,7 +174,7 @@ class NNTuner(BaseTuner):
         train_losses, val_losses, train_accs, val_accs = [], [], [], []
         best_val_metric = -np.inf
         best_model_state = None
-        early_stopping = EarlyStopping(patience=5, mode="max")  
+        early_stopping = EarlyStopping(patience=3, mode="max")  
 
         for epoch in range(self.cfg.epochs):
             # --- Training ---
@@ -199,9 +199,11 @@ class NNTuner(BaseTuner):
                 best_model_state = model.state_dict()  # save best weights
 
             # --- Early stopping check ---
+            early_stop = -1
             early_stopping(val_f1) # monitor F1
             if early_stopping.stop:
                 print(f"[EarlyStopping] Stopping at epoch {epoch+1}")
+                early_stop = epoch + 1
                 break
 
         # --- Load best model weights ---
@@ -222,8 +224,18 @@ class NNTuner(BaseTuner):
             val_labels=all_val_labels,
             val_probs=all_val_probs,
             val_metrics=val_metrics,
+            hyperparams={
+                "lr":config["lr"],
+                "final_lr" : optimizer.param_groups[0]['lr'],
+                "hidden1": config["hidden1"],
+                "hidden2": config["hidden2"],
+                "batch_size": config["batch_size"],
+                "optimizer": "Adam", # later -> tune it
+                "early_stop": early_stop,
+            }
         )
 
+        # later -> see if wearly stopping was triggered, at whiche epoch.......; optimizer
 
 
     def predict(self, loader, model):

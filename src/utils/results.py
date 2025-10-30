@@ -27,6 +27,7 @@ class Results:
     train: StageResults = field(default_factory=StageResults)
     val: StageResults = field(default_factory=StageResults)
     model: Optional[Any] = None
+    hyperparams: Optional[Dict] = None
 
     def to_dict(self):
         return {
@@ -44,6 +45,7 @@ class Results:
                 "metrics": vars(self.val.metrics),
             },
             "model": self.model,
+            "hyperarams": self.hyperparams,
         }
 
 

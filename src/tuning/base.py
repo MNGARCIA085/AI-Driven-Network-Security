@@ -75,6 +75,7 @@ class BaseTuner(ABC):
         val_labels=None,
         val_probs=None,
         val_metrics=None,
+        hyperparams=None,
     ) -> Results:
         results = Results()
 
@@ -95,6 +96,9 @@ class BaseTuner(ABC):
             results.val.probs = val_probs
         if val_metrics is not None:
             results.val.metrics = Metrics(**val_metrics)
+
+        if hyperparams is not None:
+            results.hyperparams = hyperparams
 
         results.model = model
         return results

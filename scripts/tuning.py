@@ -50,7 +50,7 @@ def main(cfg: DictConfig):
             preprocessor=preprocessor,
         ) # returns for ex NNTuner(cfg_tuning, X_train, y_train, X_val, y_val, num_classes) or TreeTuner...
 
-        best_config = tuner.tune(num_samples=1) # 10
+        best_config = tuner.tune(num_samples=1) # 10; later from config....
 
         # Train best model and get all metrics
         results = tuner.train_best_model(best_config)

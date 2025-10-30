@@ -74,6 +74,11 @@ class TreeTuner(BaseTuner):
             val_labels=results_val['labels'],
             val_probs=results_val['probs'],
             val_metrics=results_val['metrics'],
+            hyperparams={
+                "criterion":config["criterion"],
+                "max_depth":config["max_depth"],
+                "min_samples_split":config["min_samples_split"],
+            }
         )
 
 

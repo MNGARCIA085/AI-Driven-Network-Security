@@ -44,6 +44,10 @@ def logging(artifacts, results, model_type):
         mlflow.log_artifact(filename, artifact_path="preprocessor")
         os.remove(filename)
 
+        # scaler type
+        mlflow.log_param("scaler_type", artifacts["scaler_type"])
+
+
     # Metrics (shared)
     for m in ["accuracy", "precision", "recall", "f1"]:
         mlflow.log_metric(m, getattr(results.val.metrics, m))
@@ -59,12 +63,17 @@ def logging(artifacts, results, model_type):
         mlflow.log_artifact(loss_path)
         os.remove(loss_path)
 
+
         acc_path = plot_train_val(results.train.accs, results.val.accs, "acc_curve.png", 'Accuracy')
         mlflow.log_artifact(acc_path)
         os.remove(acc_path)  
     
     else: # trees
         mlflow.sklearn.log_model(results.model, name="model")
+
+
+    # hyperparams (differnt dict depending on the model)
+    mlflow.log_params(results.hyperparams)
 
 
     # Common plots
@@ -75,6 +84,10 @@ def logging(artifacts, results, model_type):
     roc_path = plot_roc(results.val.labels, results.val.probs)
     mlflow.log_artifact(roc_path)
     os.remove(roc_path)
+
+
+
+
 
 
 
@@ -105,6 +118,7 @@ def log_test_results(model_type, results):
 
 
 
+# analyze perfoemce when i move only one param
 
 
 
