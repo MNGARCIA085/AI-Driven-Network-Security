@@ -1,20 +1,9 @@
 import subprocess
-import mlflow
-import joblib
 import os
 import hydra
 from omegaconf import DictConfig
 
 
-
-mlflow.set_tracking_uri("sqlite:///mlflow.db")
-
-# Set default folder for artifacts
-artifact_dir = os.path.abspath("./mlruns")  # choose any folder
-os.makedirs(artifact_dir, exist_ok=True)
-
-# ensures artifact path is set
-mlflow.set_experiment("nn_experiment")
 
 
 @hydra.main(config_path="../config", config_name="config", version_base=None)

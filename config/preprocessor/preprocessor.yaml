@@ -1,4 +1,4 @@
-path: "data/train_val_data.csv"
+path: "data/data.csv"
 path_test: "data/test_data.csv"
 path_inference: "data/inference.csv"
 features: null  # list of features or null for all

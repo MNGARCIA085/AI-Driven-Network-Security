@@ -18,7 +18,7 @@ def main(cfg: DictConfig):
 
     # Load data from the best run
     #results = select_best_model("nn_experiment", model_type = "nn")
-    results = select_best_model("nn_experiment", model_type='nn')
+    results = select_best_model(cfg.experiment_name)
     model_type = results["model_type"]
 
     # Common load
