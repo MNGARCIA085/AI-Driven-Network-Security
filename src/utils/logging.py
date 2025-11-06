@@ -86,13 +86,7 @@ def logging(exp_name, run_name, artifacts, results, model_type):
         # Model-specific logs
         if model_type == "nn":
             # Model
-            mlflow.pytorch.log_model(results.model, artifact_path="model") 
-
-
-
-
-
-
+            mlflow.pytorch.log_model(results.model, artifact_path="model")
             
             # training curves
             loss_path = plot_train_val(results.train.losses, results.val.losses, "loss_curve.png", 'Loss')
