@@ -5,11 +5,28 @@ import joblib
 import os
 
 
+"""
 mlflow.set_tracking_uri("sqlite:///mlflow.db")
 
 # Set default folder for artifacts
 artifact_dir = os.path.abspath("./mlruns")  # choose any folder
 os.makedirs(artifact_dir, exist_ok=True)
+"""
+
+
+from pathlib import Path
+
+
+# Project root (2 levels up from this file)
+root_dir = Path(__file__).resolve().parents[2]
+
+# Tracking DB
+mlflow.set_tracking_uri(f"sqlite:///{root_dir / 'mlflow.db'}")
+
+# Artifacts folder
+artifact_dir = root_dir / "mlruns"
+os.makedirs(artifact_dir, exist_ok=True)
+
 
 
 
@@ -69,7 +86,13 @@ def logging(exp_name, run_name, artifacts, results, model_type):
         # Model-specific logs
         if model_type == "nn":
             # Model
-            mlflow.pytorch.log_model(results.model, artifact_path="model")
+            mlflow.pytorch.log_model(results.model, artifact_path="model") 
+
+
+
+
+
+
             
             # training curves
             loss_path = plot_train_val(results.train.losses, results.val.losses, "loss_curve.png", 'Loss')
@@ -102,7 +125,7 @@ def logging(exp_name, run_name, artifacts, results, model_type):
 
 
 # log test results
-def log_test_results(exp_name, model_type, results):
+def log_test_results(exp_name, tuning_run_id, model_type, results):
 
     # ensures artifact path is set
     mlflow.set_experiment(exp_name)
@@ -111,6 +134,7 @@ def log_test_results(exp_name, model_type, results):
     with mlflow.start_run(run_name="test_evaluation"):
 
         # tags
+        mlflow.set_tag("tuning_run_id", tuning_run_id)
         mlflow.set_tag("dataset", "test")
         mlflow.set_tag("data_version", "v1")
 

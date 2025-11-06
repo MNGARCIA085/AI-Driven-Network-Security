@@ -62,6 +62,7 @@ def select_best_model(experiment_name, metric="f1", model_type=None, data_versio
             run_id=run_id, artifact_path="preprocessor/scaler.pkl"
         )
         return {
+            "run_id": run_id,
             "model_type": model_type,
             "model_uri": model_uri,
             "scaler_path": scaler_path,
@@ -70,6 +71,7 @@ def select_best_model(experiment_name, metric="f1", model_type=None, data_versio
 
     # Tree models
     return {
+        "run_id": run_id,
         "model_type": model_type,
         "model_uri": model_uri,
         "encoder_path": encoder_path,

@@ -18,7 +18,8 @@ def main(cfg: DictConfig):
     df = pd.read_csv(path)
 
     # 2. Load model, scaler, encoder from the best run
-    results = select_best_model(cfg.experiment_name)
+    results = select_best_model(cfg.experiment_name) #, model_type="nn")
+    tuning_run_id = results['run_id']
     model_type = results['model_type'] 
 
     # common load
@@ -54,9 +55,8 @@ def main(cfg: DictConfig):
     # Original used X_test, y_test; corrected to X_values, y_encoded
     results = evaluator.evaluate(X_values, y_encoded)
 
-
     # Logging
-    log_test_results(cfg.experiment_name, model_type, results)
+    log_test_results(cfg.experiment_name, tuning_run_id, model_type, results)
 
 
 
