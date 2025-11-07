@@ -48,6 +48,10 @@ class BasePreprocessor(ABC):
             # keep only columns that exist
             existing_features = [f for f in self.features if f in df.columns]
             df = df[existing_features]
+
+        #else:
+        #    self.features = self.X_train.columns
+
         self.df = df
         return self
 
@@ -140,7 +144,7 @@ class BasePreprocessor(ABC):
     def get_artifacts(self):
         """Return all key artifacts and metadata for logging."""
         return {
-            "features": self.features,
+            "features": list(self.features) if self.features else list(self.X_train.columns),
             "scaler_type": self.scaler_type,
             "scaler": self.scaler,
             "encoder": self.label_encoder,

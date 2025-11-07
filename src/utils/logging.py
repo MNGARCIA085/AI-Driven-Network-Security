@@ -3,6 +3,7 @@ import mlflow.sklearn
 from .plots import plot_cm, plot_roc, plot_train_val
 import joblib
 import os
+import json
 
 
 """
@@ -53,7 +54,9 @@ def logging(exp_name, run_name, artifacts, results, model_type):
         mlflow.log_param("val_shape", str(artifacts["val_shape"]))    
 
         # Common artifacts
-        mlflow.log_dict({"features": artifacts["features"]}, "features.json")
+        with open("features.json", "w") as f:
+            json.dump({"features": artifacts["features"]}, f, indent=2)
+        mlflow.log_artifact("features.json")
         mlflow.log_dict(artifacts["class_dist_before_smote"], "class_dist_before_smote.json")
         mlflow.log_dict(artifacts["class_dist_after_smote"], "class_dist_after_smote.json")
 
@@ -182,4 +185,18 @@ mlflow server \
 
 
 
+"""
+
+
+"""
+Load featiures
+import json
+import mlflow
+
+# Download the artifact
+local_path = mlflow.artifacts.download_artifacts(run_id=<run_id>, artifact_path="features.json")
+
+# Read the features
+with open(local_path) as f:
+    features = json.load(f)
 """

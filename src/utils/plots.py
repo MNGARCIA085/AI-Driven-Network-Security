@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import label_binarize
 from sklearn.metrics import confusion_matrix, roc_curve, auc
 import numpy as np
+import os
 
 
 
-
-def plot_train_val(train_values, val_values, save_path, ylabel, xlabel="Epoch"):
+def plot_train_val(train_values, val_values, plot_name, ylabel, xlabel="Epoch"):
     """
     Plot training and validation curves (it can be for loss or accs)
     
@@ -16,7 +16,7 @@ def plot_train_val(train_values, val_values, save_path, ylabel, xlabel="Epoch"):
         val_values (list or array): Validation values per epoch.
         ylabel (str): Label for y-axis
         xlabel (str): Label for x-axis (default "Epoch").
-        save_path (str): File path to save the plot.
+        plot_name (str): Acc or Loss.
         
     Returns:
         str: The path where the plot was saved.
@@ -28,6 +28,7 @@ def plot_train_val(train_values, val_values, save_path, ylabel, xlabel="Epoch"):
     plt.ylabel(ylabel)
     plt.legend()
     plt.grid(True)
+    save_path = os.path.join(os.getcwd(), plot_name)
     plt.savefig(save_path)
     plt.close()
     return save_path
@@ -53,7 +54,8 @@ def plot_cm(labels, preds):
     plt.xlabel("Predicted")
     plt.ylabel("True")
     plt.title("Confusion Matrix")
-    cm_path = "confusion_matrix.png"
+    #cm_path = "confusion_matrix.png"
+    cm_path = os.path.join(os.getcwd(), "confusion_matrix.png")
     plt.savefig(cm_path)
     plt.close()
     return cm_path
@@ -93,7 +95,8 @@ def plot_roc(labels, probs):
     plt.legend(loc="lower right")
 
     # Save figure and log to MLflow
-    roc_path = "roc_multiclass.png"
+    #roc_path = "roc_multiclass.png"
+    roc_path = os.path.join(os.getcwd(), "roc_multiclass.png") # save in appropiate output dir so i dont have problems with // exec
     plt.savefig(roc_path)
     plt.close()
 
