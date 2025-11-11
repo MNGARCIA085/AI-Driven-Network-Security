@@ -111,6 +111,7 @@ class NNPreprocessor(BasePreprocessor):
         df = self.df.drop('Label', axis=1) if 'Label' in self.df.columns else self.df
         # -> for later df = self.df[self.features]; now i already pass it ok (without the label)
 
+
         df = pd.DataFrame(scaler.transform(df)) #, columns=self.features)
 
         return df.values
