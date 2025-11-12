@@ -5,6 +5,7 @@ from sklearn.metrics import confusion_matrix, roc_curve, auc
 import numpy as np
 import os
 
+from hydra.utils import to_absolute_path
 
 
 def plot_train_val(train_values, val_values, plot_name, ylabel, xlabel="Epoch"):
@@ -54,7 +55,6 @@ def plot_cm(labels, preds):
     plt.xlabel("Predicted")
     plt.ylabel("True")
     plt.title("Confusion Matrix")
-    #cm_path = "confusion_matrix.png"
     cm_path = os.path.join(os.getcwd(), "confusion_matrix.png")
     plt.savefig(cm_path)
     plt.close()
