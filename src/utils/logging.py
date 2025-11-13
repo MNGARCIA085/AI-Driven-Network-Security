@@ -163,6 +163,7 @@ def select_best_model(experiment_name, metric="f1", model_type=None, data_versio
         run_id=run_id, artifact_path="preprocessor/label_encoder.pkl"
     )
 
+
     model_type = best_run.data.tags.get("model_type")
 
     # NN models include scaler
