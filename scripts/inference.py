@@ -4,7 +4,7 @@ import mlflow
 import joblib
 import pandas as pd
 from omegaconf import DictConfig
-from src.utils.model_selection import select_best_model
+from src.utils.logging import select_best_model
 from src.preprocessors.factory import PreprocessorFactory 
 from src.inference.factory import PredictorFactory
 
