@@ -9,10 +9,10 @@ from .nn import NNTrainer
 
 class TrainerFactory:
     @staticmethod
-    def get_trainer(model_type, average, num_classes):
+    def get_trainer(model_type, num_classes, average):
         if model_type.lower() == "tree":
-            return TreeTrainer(average, num_classes)
+            return TreeTrainer(num_classes, average)
         elif model_type.lower() == "nn":
-            return NNTrainer(average, num_classes)
+            return NNTrainer(num_classes, average)
         else:
             raise ValueError(f"Unknown tuner type: {model_type}")

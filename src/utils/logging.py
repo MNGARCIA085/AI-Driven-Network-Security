@@ -72,15 +72,20 @@ def logging(exp_name, run_name, artifacts, results, model_type):
 
 
         # Metrics (shared)
-        for m in ["accuracy", "precision", "recall", "f1"]:
-            mlflow.log_metric(m, getattr(results.val.metrics, m))
+        #for m in ["accuracy", "precision", "recall", "f1"]:
+        #    mlflow.log_metric(m, getattr(results.val.metrics, m))
+
+
+        for m, v in results.val.metrics.items():
+            mlflow.log_metric(m, v)
+
 
 
         # Model-specific logs
         if model_type == "nn":
             # Model
             mlflow.pytorch.log_model(results.model, artifact_path="model")
-            
+
             # training curves
             loss_path = plot_train_val(results.train.losses, results.val.losses, "loss_curve.png", 'Loss')
             mlflow.log_artifact(loss_path)
@@ -107,6 +112,7 @@ def logging(exp_name, run_name, artifacts, results, model_type):
         roc_path = plot_roc(results.val.labels, results.val.probs)
         mlflow.log_artifact(roc_path)
         os.remove(roc_path)
+        
 
 
 

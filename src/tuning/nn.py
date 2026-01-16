@@ -11,7 +11,7 @@ from src.models.nnet import NNModel
 from src.utils.metrics import compute_metrics
 from src.utils.results import Results, Metrics
 from .callbacks import EarlyStopping,LRReducer
-
+from src.training.nn import NNTrainer
 
 
 
@@ -29,20 +29,12 @@ class NNTuner(BaseTuner):
     @staticmethod
     def train_model_ray(config, X_train_id, y_train_id, X_val_id, y_val_id, num_classes):
 
-
-        """
-        X_train = ray.get(X_train_id)
-        y_train = ray.get(y_train_id)
-        X_val = ray.get(X_val_id)
-        y_val = ray.get(y_val_id)
-        """
-        X_train = X_train_id
+        X_train = X_train_id # no X_train = ray.get(X_train_id); the call already desrialize it
         y_train = y_train_id
         X_val = X_val_id
         y_val = y_val_id
 
         input_size = X_train.shape[1]
-
 
         model = NNModel(
             input_size=input_size,
@@ -53,20 +45,13 @@ class NNTuner(BaseTuner):
 
         optimizer = optim.Adam(model.parameters(), lr=config["lr"])
         criterion = nn.CrossEntropyLoss()
-        
-
-
-        # create a trainer!!!
-        from src.training.nn import NNTrainer
-        trainer = NNTrainer('weighted', num_classes)
-
-        #train_loader, val_loader = self.create_loaders(config["batch_size"])
+    
+        # create a trainer
+        trainer = NNTrainer(num_classes, 'weighted') # no hardcoding later!!!!!
         train_loader, val_loader = trainer.create_loaders(X_train, y_train, X_val, y_val,32)
         #------------------
 
         
-
-    
         for _ in range(5):  # epochs for tuning; self.cfg.epochs_trials
             trainer.train_one_epoch(model, train_loader, optimizer, criterion)
             results = trainer.eval_one_epoch(model, val_loader, criterion)

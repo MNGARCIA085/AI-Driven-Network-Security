@@ -19,7 +19,11 @@ class StageResults:
     preds: Optional[List[Any]] = None
     labels: Optional[List[Any]] = None
     probs: Optional[List[Any]] = None
-    metrics: Metrics = field(default_factory=Metrics)
+    #metrics: Metrics = field(default_factory=Metrics)
+
+    @classmethod
+    def from_dict(cls, d: dict):
+        return cls(**{k: v for k, v in d.items() if hasattr(cls, k)})
 
 
 @dataclass

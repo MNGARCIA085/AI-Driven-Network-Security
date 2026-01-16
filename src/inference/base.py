@@ -1,4 +1,3 @@
-# inference/base_predictor.py
 from abc import ABC, abstractmethod
 
 class BasePredictor(ABC):
@@ -17,3 +16,13 @@ class BasePredictor(ABC):
     def predict_proba(self, X):
         """Predict probabilities for a single sample or a batch (if supported)."""
         pass
+
+    @abstractmethod
+    def predict_labels(self, X):
+        """ Predict labels in a human readable way (DDoS)...."""
+        pass
+
+
+
+
+    

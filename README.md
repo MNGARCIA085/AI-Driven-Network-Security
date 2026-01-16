@@ -60,3 +60,15 @@ python -m scripts.tuning model_type=nn tuning.batch_size=64 tuning.epochs=5
 ```
 
 
+mlflow server \
+    --backend-store-uri sqlite:///mlflow.db \
+    --default-artifact-root ./mlruns \
+    --host 0.0.0.0 \
+    --port 5000
+
+
+# Delete the SQLite file
+rm mlflow.db
+
+# Delete all artifacts (by default in ./mlruns/)
+rm -rf mlruns/

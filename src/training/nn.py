@@ -17,19 +17,16 @@ from .callbacks import EarlyStopping,LRReducer
 
 
 class NNTrainer(BaseTrainer):
-    def __init__(self, average, num_classes):
-        super().__init__( average)
-        #self.input_size = X_train.shape[1]
-        
-        self.num_classes = num_classes
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-
+    def __init__(self, num_classes, average):
+        super().__init__(num_classes, average)
+        self.device = "cuda" if torch.cuda.is_available() else "cpu" # is it important for trees????
         self.batch_size = 32
 
 
 
-     # --- Data loaders ---
+    # --- Data loaders ---
     def create_loaders(self, X_train, y_train, X_val, y_val, batch_size):
+        """ loaders for train and val"""
         train_loader = DataLoader(
             TensorDataset(torch.tensor(X_train, dtype=torch.float32),
                           torch.tensor(y_train, dtype=torch.long)),
@@ -72,7 +69,7 @@ class NNTrainer(BaseTrainer):
 
 
     # --- Evaluation ---
-    def eval_one_epoch(self, model, loader, criterion):
+    def eval_one_epoch(self, model, loader, criterion, return_raw=False):
         model.eval()
         preds, labels, probs = [], [], []
         total_loss = 0.0
@@ -104,26 +101,64 @@ class NNTrainer(BaseTrainer):
             average=self.average,
         )
 
-        # Return metrics + raw arrays
+        return metrics
+
+        # for now!!!!!!!!!!!!!!!!!!!!!!!!!!!
         return {**metrics, "preds": np.array(preds), "labels": np.array(labels), "probs": np.array(probs)}
+
+        if return_raw:
+            # Return metrics + raw arrays
+            return {
+                **metrics,
+                "preds": np.array(preds),
+                "labels": np.array(labels),
+                "probs": np.array(probs),
+            }
+
+        return metrics
+
 
 
 
 
     # --- Train a model ---
-    def train(self, X_train, y_train, X_val, y_val, config, epochs) -> Results:
+    def train(self, X_train, y_train, X_val, y_val, config) -> Results:
+        """
+        config like:
+        config = {
+            "model": {
+                "hidden_dims": [128, 64],
+                "dropout": 0.2,
+            },
+            "training": {
+                "epochs": 50,
+                "batch_size": 32,
+                "lr": 1e-3,
+            },
+        }
 
+        in trees i might not have training at all
+
+        """
+
+        # input size
         input_size = X_train.shape[1]
 
+        # get configs
+        model_config = config.get("model", {})
+        train_config = config.get("training", {})
+
+
+        # model
         model = NNModel(
             input_size=input_size,
             num_classes=self.num_classes,
-            hidden1=config["hidden1"],
-            hidden2=config["hidden2"]
+            hidden1=model_config.get("hidden1"),
+            hidden2=model_config.get("hidden2")
         ).to(self.device)
 
-        train_loader, val_loader = self.create_loaders(X_train, y_train, X_val, y_val, config["batch_size"])
-        optimizer = optim.Adam(model.parameters(), lr=config["lr"])
+        train_loader, val_loader = self.create_loaders(X_train, y_train, X_val, y_val, train_config.get("batch_size"))
+        optimizer = optim.Adam(model.parameters(), lr=train_config["lr"])
         criterion = nn.CrossEntropyLoss()
 
 
@@ -135,6 +170,8 @@ class NNTrainer(BaseTrainer):
         best_model_state = None
         early_stopping = EarlyStopping(patience=3, mode="max")  
 
+        
+        epochs = train_config.get('epochs')
         for epoch in range(epochs):
             # --- Training ---
             train_loss, train_acc = self.train_one_epoch(model, train_loader, optimizer, criterion)
@@ -180,9 +217,6 @@ class NNTrainer(BaseTrainer):
         # --- Load best model weights ---
         model.load_state_dict(best_model_state)
 
-        # --- Make predictions with best model ---  maybe take tjhisout later!!!!!!!!!!!!!!!!!!!! trainer only trains!!
-        all_val_preds, all_val_labels, all_val_probs = self.predict(val_loader, model)
-        val_metrics = compute_metrics(all_val_labels, all_val_preds, average=self.average)
 
         # --- Return results ---
         return self._build_results(
@@ -191,16 +225,12 @@ class NNTrainer(BaseTrainer):
             train_accs=train_accs,
             val_losses=val_losses,
             val_accs=val_accs,
-            val_preds=all_val_preds,
-            val_labels=all_val_labels,
-            val_probs=all_val_probs,
-            val_metrics=val_metrics,
             hyperparams={
-                "lr":config["lr"],
+                "lr":train_config.get("lr"),
                 "final_lr" : optimizer.param_groups[0]['lr'],
-                "hidden1": config["hidden1"],
-                "hidden2": config["hidden2"],
-                "batch_size": config["batch_size"],
+                "hidden1": model_config.get("hidden1"),
+                "hidden2": model_config.get("hidden2"),
+                "batch_size": model_config.get("batch_size"),
                 "optimizer": "Adam", # later -> tune it
                 "early_stop": early_stop,
             }
@@ -209,20 +239,12 @@ class NNTrainer(BaseTrainer):
 
 
 
+    
 
-    # later in the predict class!!!!!!!!!
-    def predict(self, loader, model):
-        model.eval()
-        preds, labels, probs = [], [], []
-        with torch.no_grad():
-            for xb, yb in loader:
-                xb, yb = xb.to(self.device), yb.to(self.device)
-                out = model(xb)
-                prob = nn.functional.softmax(out, dim=1)
-                probs.extend(prob.cpu().numpy())
-                preds.extend(out.argmax(1).cpu().numpy())
-                labels.extend(yb.cpu().numpy())
-        return np.array(preds), np.array(labels), np.array(probs)
+
+
+
+
 
 
 

@@ -46,11 +46,17 @@ def main(cfg: DictConfig):
         num_classes=preprocessor.num_classes,
     )
 
-    #results = trainer.train(X_train, y_train, X_val, y_val, best_config,10) # not 10 for trees
-    results = trainer.train(X_train, y_train, X_val, y_val, best_config)
+    
+
+
+    # config
+    print(best_config)
+    # maybe merge what i tune with what i dont
+
+    #results = trainer.train(X_train, y_train, X_val, y_val, best_config)
 
     # Logging
-    logging(cfg.experiment_name, 'Tuning', artifacts, results, model_type)
+    #logging(cfg.experiment_name, 'Tuning', artifacts, results, model_type)
 
 
 

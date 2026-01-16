@@ -1,6 +1,8 @@
 defaults:
   - preprocessor: preprocessor
+  - models: nn
   - tuning: nn
+  - training: nn
   - evaluation: evaluation
   - override hydra/launcher: joblib
   - _self_

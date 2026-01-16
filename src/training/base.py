@@ -11,11 +11,12 @@ class BaseTrainer():
     Base training class
     """
 
-    def __init__(self,  average):
-        self.average = average  # common for metric computations; but it shuldnnt be here probably
+    def __init__(self,  num_classes, average):
+        self.num_classes = num_classes
+        self.average = average 
 
     # ---------------- Methods ---------------- #
-    def train(self, config) -> Results:
+    def train(self, X_train, y_train, X_val, y_val, config) -> Results:
         """Train a model with the given config and return metrics + model."""
         pass
 
@@ -45,6 +46,9 @@ class BaseTrainer():
             results.val.losses = val_losses
         if val_accs is not None:
             results.val.accs = val_accs
+        
+
+        """
         if val_preds is not None:
             results.val.preds = val_preds
         if val_labels is not None:
@@ -53,6 +57,7 @@ class BaseTrainer():
             results.val.probs = val_probs
         if val_metrics is not None:
             results.val.metrics = Metrics(**val_metrics)
+        """
 
         if hyperparams is not None:
             results.hyperparams = hyperparams

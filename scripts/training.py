@@ -2,9 +2,10 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 from src.preprocessors.factory import PreprocessorFactory
 from src.training.factory import TrainerFactory
+from src.inference.factory import PredictorFactory
 import os
 from src.utils.logging import logging
-
+from src.utils.metrics import compute_metrics
 
 
 
@@ -12,42 +13,88 @@ from src.utils.logging import logging
 @hydra.main(config_path="../config", config_name="config", version_base=None)
 def main(cfg: DictConfig):
 
-
     # get model type (nn, tree.....)
     model_type = cfg.model_type
     print(f"\nSelected model: {model_type}")
 
     # Preprocessing
     preprocessor = PreprocessorFactory.get_preprocessor(model_type, cfg, cfg.preprocessor)
-    X_train, X_val, y_train, y_val, artifacts = preprocessor.preprocess()
+    X_train, X_val, y_train, y_val, artifacts = preprocessor.preprocess() # rename to clarify are preprocessed
     artifacts = preprocessor.get_artifacts()
 
-
-
     # Training
-    #cfg_tuning = OmegaConf.load(f"config/tuning/{model_type}.yaml") # use tuning/nn.yaml or tuning/tree.yaml....
     trainer = TrainerFactory.get_trainer(
         model_type=model_type,
-        average='weighted',
         num_classes=preprocessor.num_classes,
+        average='weighted',
     )
 
-    # Train best model and get all metrics
-    # later pass appr. config
-    config = {"hidden1": 64, "hidden2": 64, "lr":1e-3, "batch_size":32} # lr? bsize?
-
-
-    config_tree = {"criterion":"log_loss", "max_depth":10, "min_samples_split":2}
-
-
+    # config
+    model_config = OmegaConf.load(f"config/models/{model_type}.yaml")
+    train_config = OmegaConf.load(f"config/training/{model_type}.yaml")
+    config = {
+        "model": model_config,
+        "training": train_config
+    }
     
     # model_config, training_config...............
-    results = trainer.train(X_train, y_train, X_val, y_val, config_tree) #, 10) # 10 not applicabel for trees; wht goes heer it needs to cme from config; use **kwargs
+    results = trainer.train(X_train, y_train, X_val, y_val, config)
 
-    # criterion, max depth, min_sample split -> model_config
-    #results = trainer.train(config)
+
+
+
+
+    # -------------- Predict ------------------------------
+    # scaler and encoder
+    scaler = artifacts.get("scaler") # None for trees
+    encoder = artifacts.get("encoder")
+
+    data_pred = {
+            "model_type": model_type,
+            "model": results.model,
+            "scaler": scaler,
+            "encoder": encoder,
+            "device": "cpu"
+    }
+
+    predictor = PredictorFactory.get_predictor(**data_pred)
+
+    preds = predictor.predict(X_val) # 0 0 1
+    preds2 = predictor.predict_proba(X_val) # probs
+    #preds3 = predictor.predict_logits(X_val) # logits
+    preds4 = predictor.predict_labels(X_val)
+
+
+    print(preds)
+    print(preds2)
+    print(preds4)
+
+    val_metrics = compute_metrics(y_val, preds, 'weighted')
 
     print(results)
+    print(type(results))
+    print(val_metrics)
+
+
+    from src.utils.results import Metrics
+    #results.val.metrics = Metrics.from_dict(val_metrics)
+    results.val.metrics = val_metrics
+
+
+    # labels, preds and probs for cm and roc curve
+    results.val.labels = y_val
+    results.val.preds = preds
+    results.val.probs = preds2
+
+    
+
+
+
+    # data for logging
+
+
+
+
 
     # Logging
     logging(cfg.experiment_name, 'Training', artifacts, results, model_type)
@@ -62,17 +109,7 @@ if __name__ == "__main__":
 
 
 
-"""
-python -m src.scripts.tuning
-python -m src.scripts.tuning model_type=tree
-python -m src.scripts.tuning -m model_type=nn,tree
-"""
 
-
-# see later // training
-# python train.py -m models=tree,nn,rf
-# python train.py -m models=tree,nn,rf hydra/launcher=submitit_local
-# python train.py -m models=tree,nn lr=0.001,0.01 batch_size=32,64
 
 
 
