@@ -6,7 +6,7 @@ from src.utils.results import Results, Metrics
 
 
 
-class BaseTuner(ABC):
+class BaseTuner(): # ABC
     """
     Abstract base class for Ray Tune-based hyperparameter tuning.
     Handles Ray object storage, generic tune(), and metric averaging.
@@ -20,9 +20,9 @@ class BaseTuner(ABC):
         self.y_val_id = ray.put(y_val)
         self.average = cfg.average  # common for metric computations
 
-    # ---------------- Abstract methods ---------------- #
-    @abstractmethod
-    def _train_model_ray(self, config):
+    # ---------------- Methods ---------------- #
+    @staticmethod
+    def train_model_ray(config, X_train_id, y_train_id, X_val_id, y_val_id, num_classes):
         """Train one model configuration for Ray Tune."""
         pass
 
@@ -31,15 +31,6 @@ class BaseTuner(ABC):
         """Return the hyperparameter search space for Ray Tune."""
         pass
 
-    @abstractmethod
-    def train_best_model(self, config) -> Results:
-        """Train a model with the given config and return metrics + model."""
-        pass
-
-    #@abstractmethod
-    #def eval_model(self, model, X, y):
-    #    """Evaluate a trained model."""
-    #    pass
 
     # ---------------- Shared method ---------------- #
     def tune(self, num_samples=5): # -> ok
@@ -50,57 +41,34 @@ class BaseTuner(ABC):
         config = self.get_tune_config()
         scheduler = ASHAScheduler(metric="f1", mode="max")
 
+       
+        # train_fn
+        train_fn = type(self).train_model_ray 
+
+
         tuner = tune.Tuner(
-            tune.with_parameters(self._train_model_ray),
+            tune.with_parameters(
+                train_fn,
+                X_train_id=self.X_train_id,
+                y_train_id=self.y_train_id,
+                X_val_id=self.X_val_id,
+                y_val_id=self.y_val_id,
+                num_classes=self.num_classes,
+            ),
             param_space=config,
             tune_config=tune.TuneConfig(
                 scheduler=scheduler,
-                num_samples=num_samples
-            )
+                num_samples=num_samples,
+            ),
         )
+
+
         results = tuner.fit()
         best = results.get_best_result(metric="f1", mode="max")
         return best.config
 
 
 
-    def _build_results(
-        self,
-        model,
-        train_losses=None,
-        train_accs=None,
-        val_losses=None,
-        val_accs=None,
-        val_preds=None,
-        val_labels=None,
-        val_probs=None,
-        val_metrics=None,
-        hyperparams=None,
-    ) -> Results:
-        results = Results()
-
-        if train_losses is not None:
-            results.train.losses = train_losses
-        if train_accs is not None:
-            results.train.accs = train_accs
-
-        if val_losses is not None:
-            results.val.losses = val_losses
-        if val_accs is not None:
-            results.val.accs = val_accs
-        if val_preds is not None:
-            results.val.preds = val_preds
-        if val_labels is not None:
-            results.val.labels = val_labels
-        if val_probs is not None:
-            results.val.probs = val_probs
-        if val_metrics is not None:
-            results.val.metrics = Metrics(**val_metrics)
-
-        if hyperparams is not None:
-            results.hyperparams = hyperparams
-
-        results.model = model
-        return results
+    
 
 

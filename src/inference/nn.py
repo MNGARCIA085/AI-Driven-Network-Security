@@ -36,5 +36,19 @@ class NNPredictor(BasePredictor):
 
 
 
-
+"""
+presd with targets
+def predict(self, loader, model):
+        model.eval()
+        preds, labels, probs = [], [], []
+        with torch.no_grad():
+            for xb, yb in loader:
+                xb, yb = xb.to(self.device), yb.to(self.device)
+                out = model(xb)
+                prob = nn.functional.softmax(out, dim=1)
+                probs.extend(prob.cpu().numpy())
+                preds.extend(out.argmax(1).cpu().numpy())
+                labels.extend(yb.cpu().numpy())
+        return np.array(preds), np.array(labels), np.array(probs)
+"""
 
