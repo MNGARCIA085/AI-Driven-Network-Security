@@ -39,11 +39,11 @@ class NNTuner(BaseTuner):
         model = NNModel(
             input_size=input_size,
             num_classes=num_classes,
-            hidden1=config["hidden1"],
-            hidden2=config["hidden2"]
+            hidden1=config["model.hidden1"],
+            hidden2=config["model.hidden2"]
         ) #.to(self.device)
 
-        optimizer = optim.Adam(model.parameters(), lr=config["lr"])
+        optimizer = optim.Adam(model.parameters(), lr=config["training.lr"])
         criterion = nn.CrossEntropyLoss()
     
         # create a trainer
@@ -52,7 +52,7 @@ class NNTuner(BaseTuner):
         #------------------
 
         
-        for _ in range(5):  # epochs for tuning; self.cfg.epochs_trials
+        for _ in range(5):  # epochs for tuning; self.cfg.epochs_trials; change later!!!!!
             trainer.train_one_epoch(model, train_loader, optimizer, criterion)
             results = trainer.eval_one_epoch(model, val_loader, criterion)
             
@@ -78,10 +78,11 @@ class NNTuner(BaseTuner):
     # Tuning config
     def get_tune_config(self):
         return {
-            "hidden1": tune.choice(self.cfg.hidden1),
-            "hidden2": tune.choice(self.cfg.hidden2),
-            "batch_size": tune.choice(self.cfg.batch_size),
-            "lr": tune.loguniform(self.cfg.lr.min, self.cfg.lr.max)
+            "model.hidden1": tune.choice(self.cfg.hidden1),
+            "model.hidden2": tune.choice(self.cfg.hidden2),
+            "training.batch_size": tune.choice(self.cfg.batch_size),
+            "training.lr": tune.loguniform(self.cfg.lr.min, self.cfg.lr.max),
+            "training.epochs": 5 # later add epcosh_trials too
         }
 
 

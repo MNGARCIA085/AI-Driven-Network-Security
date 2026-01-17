@@ -1,4 +1,4 @@
-num_samples: 1
+num_samples: 2
 hidden1: [64, 128, 256]
 hidden2: [32, 64, 128]
 batch_size: [32, 64]

@@ -9,6 +9,25 @@ from src.utils.logging import logging
 from src.training.factory import TrainerFactory
 
 
+
+
+
+
+
+def unflatten_config(flat_cfg):
+    cfg = {"model": {}, "training": {}}
+    for k, v in flat_cfg.items():
+        group, name = k.split(".")
+        cfg[group][name] = v
+    return cfg
+
+
+
+
+
+
+
+
 @hydra.main(config_path="../config", config_name="config", version_base=None)
 def main(cfg: DictConfig):
 
@@ -53,7 +72,13 @@ def main(cfg: DictConfig):
     print(best_config)
     # maybe merge what i tune with what i dont
 
-    #results = trainer.train(X_train, y_train, X_val, y_val, best_config)
+
+    config = unflatten_config(best_config)
+
+
+    results = trainer.train(X_train, y_train, X_val, y_val, config)
+
+    print(results)
 
     # Logging
     #logging(cfg.experiment_name, 'Tuning', artifacts, results, model_type)

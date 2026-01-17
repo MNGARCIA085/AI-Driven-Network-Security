@@ -30,9 +30,9 @@ class TreeTuner(BaseTuner):
         y_val = y_val_id
 
         model = TreeModel(
-            criterion=config["criterion"],
-            max_depth=config["max_depth"],
-            min_samples_split=config["min_samples_split"],
+            criterion=config["model.criterion"],
+            max_depth=config["model.max_depth"],
+            min_samples_split=config["model.min_samples_split"],
             random_state=42,
         )
 
@@ -52,9 +52,9 @@ class TreeTuner(BaseTuner):
     # get tune config
     def get_tune_config(self):
         return {
-            "criterion": tune.choice(self.cfg.criterion),
-            "max_depth": tune.randint(self.cfg.max_depth.min, self.cfg.max_depth.max),
-            "min_samples_split": tune.randint(self.cfg.min_samples_split.min, self.cfg.min_samples_split.max)
+            "model.criterion": tune.choice(self.cfg.criterion),
+            "model.max_depth": tune.randint(self.cfg.max_depth.min, self.cfg.max_depth.max),
+            "model.min_samples_split": tune.randint(self.cfg.min_samples_split.min, self.cfg.min_samples_split.max)
         }
 
     
