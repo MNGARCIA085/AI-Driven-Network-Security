@@ -7,10 +7,10 @@ from .tree import TreePredictor
 
 class PredictorFactory:
     @staticmethod
-    def get_predictor(model_type, model, encoder, scaler=None, device="cpu"):
+    def get_predictor(model_type, model, encoder, device="cpu"):
         # Create appropriate predictor
         if model_type == "nn":
-            return NNPredictor(model, encoder, scaler, device=device)
+            return NNPredictor(model, encoder, device=device)
         elif model_type=='tree':
             return TreePredictor(model, encoder)
         else:

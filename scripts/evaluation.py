@@ -43,7 +43,6 @@ def main(cfg: DictConfig):
         data_pred = {
             "model_type": model_type,
             "model": model,
-            "scaler": scaler,
             "encoder": encoder,
             "device": "cpu"
         }
@@ -82,10 +81,9 @@ def main(cfg: DictConfig):
     evaluator = Evaluator()
     metrics = evaluator.compute_metrics(y_encoded, y_pred)
 
-    print(metrics)
 
 
-    # format results
+    # 6. Format results
     results = TestResults(
             metrics = Metrics(**metrics),
             preds = np.array(y_pred),

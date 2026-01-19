@@ -4,7 +4,7 @@ from .base import BasePredictor
 class TreePredictor(BasePredictor):
     """Predictor for tree-based models (e.g., DecisionTree, RandomForest)."""
 
-    def __init__(self, model, encoder):
+    def __init__(self, model, encoder=None):
         super().__init__(model, encoder)
 
     def predict_proba(self, X):

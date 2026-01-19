@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 class BasePredictor(ABC):
     """Abstract base class for predictors."""
 
-    def __init__(self, model, encoder):
+    def __init__(self, model, encoder=None):
         self.model = model
         self.encoder = encoder
 

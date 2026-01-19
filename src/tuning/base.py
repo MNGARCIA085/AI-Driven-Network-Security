@@ -37,6 +37,13 @@ class BaseTuner(): # ABC
         """
         Generic Ray Tune wrapper.
         Subclasses provide _train_model_ray and get_tune_config.
+
+
+        Note. Arguments passed through tune.with_parameters are already deserialized
+        when received by the train function, even if they originate from ray.put().
+        Avoid calling ray.get() again inside train_model_ray.
+
+
         """
         config = self.get_tune_config()
         scheduler = ASHAScheduler(metric="f1", mode="max")
@@ -49,10 +56,10 @@ class BaseTuner(): # ABC
         tuner = tune.Tuner(
             tune.with_parameters(
                 train_fn,
-                X_train_id=self.X_train_id,
-                y_train_id=self.y_train_id,
-                X_val_id=self.X_val_id,
-                y_val_id=self.y_val_id,
+                X_train=self.X_train_id,
+                y_train=self.y_train_id,
+                X_val=self.X_val_id,
+                y_val=self.y_val_id,
                 num_classes=self.num_classes,
             ),
             param_space=config,

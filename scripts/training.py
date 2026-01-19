@@ -1,11 +1,12 @@
+import os
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from src.preprocessors.factory import PreprocessorFactory
 from src.training.factory import TrainerFactory
 from src.inference.factory import PredictorFactory
-import os
+from src.evaluation.base import Evaluator
 from src.utils.logging import logging
-from src.utils.metrics import compute_metrics
+
 
 
 
@@ -42,61 +43,39 @@ def main(cfg: DictConfig):
 
 
 
-
-
     # -------------- Predict ------------------------------
-    # scaler and encoder
-    scaler = artifacts.get("scaler") # None for trees
+    # Get encoder
     encoder = artifacts.get("encoder")
 
     data_pred = {
             "model_type": model_type,
             "model": results.model,
-            "scaler": scaler,
             "encoder": encoder,
             "device": "cpu"
     }
 
+    # Predictor
     predictor = PredictorFactory.get_predictor(**data_pred)
 
     preds = predictor.predict(X_val) # 0 0 1
-    preds2 = predictor.predict_proba(X_val) # probs
-    #preds3 = predictor.predict_logits(X_val) # logits
-    preds4 = predictor.predict_labels(X_val)
+    probs = predictor.predict_proba(X_val)
+    preds_labels = predictor.predict_labels(X_val) # DDos, BENIGN....
 
 
-    print(preds)
-    print(preds2)
-    print(preds4)
-
-    val_metrics = compute_metrics(y_val, preds, 'weighted')
-
-    print(results)
-    print(type(results))
-    print(val_metrics)
+    #---------------Evaluation----------------------------
+    evaluator = Evaluator() # include average later appr.
+    val_metrics = evaluator.compute_metrics(y_val, preds)
 
 
-    from src.utils.results import Metrics
-    #results.val.metrics = Metrics.from_dict(val_metrics)
+    #-------------Results--------------------------------
     results.val.metrics = val_metrics
-
-
     # labels, preds and probs for cm and roc curve
     results.val.labels = y_val
     results.val.preds = preds
-    results.val.probs = preds2
-
-    
+    results.val.probs = probs
 
 
-
-    # data for logging
-
-
-
-
-
-    # Logging
+    #-------------Logging --------------------------------
     logging(cfg.experiment_name, 'Training', artifacts, results, model_type)
 
 

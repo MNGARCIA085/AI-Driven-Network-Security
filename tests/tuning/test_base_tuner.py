@@ -19,7 +19,8 @@ def sample_data():
     y_train = np.random.randint(0, 2, 20)
     X_val = np.random.rand(10, 4)
     y_val = np.random.randint(0, 2, 10)
-    return X_train, y_train, X_val, y_val
+    num_classes = 10 # maybe later len(np.unique(y_train))
+    return X_train, y_train, X_val, y_val, num_classes
 
 
 @pytest.fixture
@@ -40,7 +41,7 @@ def cfg():
 
 # ---------- BaseTuner ----------
 def test_base_tuner_puts_data(cfg, sample_data):
-    X_train, y_train, X_val, y_val = sample_data
-    tuner = TreeTuner(cfg, X_train, y_train, X_val, y_val)
+    X_train, y_train, X_val, y_val, num_classes = sample_data
+    tuner = TreeTuner(cfg, X_train, y_train, X_val, y_val, num_classes)
     assert isinstance(tuner.X_train_id, ray.ObjectRef)
     assert tuner.average == "weighted"

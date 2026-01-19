@@ -23,7 +23,8 @@ def sample_data():
     y_train = np.random.randint(0, 2, 20)
     X_val = np.random.rand(10, 4)
     y_val = np.random.randint(0, 2, 10)
-    return X_train, y_train, X_val, y_val
+    num_classes = 10
+    return X_train, y_train, X_val, y_val, num_classes
 
 
 @pytest.fixture
@@ -45,17 +46,22 @@ def cfg():
 
 # ------------ Tests--------------
 def test_tree_tuner_get_config(cfg, sample_data):
-    X_train, y_train, X_val, y_val = sample_data
-    tuner = TreeTuner(cfg, X_train, y_train, X_val, y_val)
+    X_train, y_train, X_val, y_val, num_classes = sample_data
+    tuner = TreeTuner(cfg, X_train, y_train, X_val, y_val, num_classes)
     config = tuner.get_tune_config()
-    assert "criterion" in config
-    assert "max_depth" in config
+    assert "model.criterion" in config
+    assert "model.max_depth" in config
     #print(config, flush=True)
 
 
+
+
+"""
+belongs to train!!!!!!!!!!
+
 def test_tree_tuner_train_best_model(cfg, sample_data, monkeypatch):
-    X_train, y_train, X_val, y_val = sample_data
-    tuner = TreeTuner(cfg, X_train, y_train, X_val, y_val)
+    X_train, y_train, X_val, y_val, num_classes = sample_data
+    tuner = TreeTuner(cfg, X_train, y_train, X_val, y_val, num_classes)
 
     class DummyModel:
         def fit(self, X, y): pass
@@ -70,3 +76,4 @@ def test_tree_tuner_train_best_model(cfg, sample_data, monkeypatch):
     })
     assert hasattr(results, "val")
     assert isinstance(results.val.metrics, Metrics)
+"""

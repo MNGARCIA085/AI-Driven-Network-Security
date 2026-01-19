@@ -1,30 +1,13 @@
+import os
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from src.preprocessors.factory import PreprocessorFactory
 from src.tuning.factory import TunerFactory
-import os
 from src.utils.logging import logging
-
-
 from src.training.factory import TrainerFactory
-
-
-
-
-
-
-
-def unflatten_config(flat_cfg):
-    cfg = {"model": {}, "training": {}}
-    for k, v in flat_cfg.items():
-        group, name = k.split(".")
-        cfg[group][name] = v
-    return cfg
-
-
-
-
-
+from src.utils.config import unflatten_config
+from src.inference.factory import PredictorFactory
+from src.evaluation.base import Evaluator
 
 
 
@@ -36,12 +19,12 @@ def main(cfg: DictConfig):
     model_type = cfg.model_type
     print(f"\nSelected model: {model_type}")
 
-    # Preprocessing
+    # -------------- 1. Preprocessing ----------------------
     preprocessor = PreprocessorFactory.get_preprocessor(model_type, cfg, cfg.preprocessor)
     X_train, X_val, y_train, y_val, artifacts = preprocessor.preprocess()
     artifacts = preprocessor.get_artifacts()
 
-    # Tuning
+    # ----------- 2. Tuning--------------------------
     cfg_tuning = OmegaConf.load(f"config/tuning/{model_type}.yaml") # use tuning/nn.yaml or tuning/tree.yaml....
     tuner = TunerFactory.get_tuner(
         model_type=model_type,
@@ -54,34 +37,51 @@ def main(cfg: DictConfig):
     ) # returns for ex NNTuner(cfg_tuning, X_train, y_train, X_val, y_val, num_classes) or TreeTuner...
 
     best_config = tuner.tune(num_samples=cfg.tuning.num_samples)
+    print(best_config)
+    config = unflatten_config(best_config)
 
-    # Train best model and get all metrics
-    
-
-
+    # -------- 3. Train the model with the best config ------------------
+    # Trainer
     trainer = TrainerFactory.get_trainer(
         model_type=model_type,
         average='weighted',
         num_classes=preprocessor.num_classes,
     )
 
-    
-
-
-    # config
-    print(best_config)
-    # maybe merge what i tune with what i dont
-
-
-    config = unflatten_config(best_config)
-
-
     results = trainer.train(X_train, y_train, X_val, y_val, config)
-
     print(results)
 
-    # Logging
-    #logging(cfg.experiment_name, 'Tuning', artifacts, results, model_type)
+
+    # ---------- 4. Assemble results-------------------------
+    encoder = artifacts.get("encoder")
+
+    data_pred = {
+            "model_type": model_type,
+            "model": results.model,
+            "encoder": encoder,
+            "device": "cpu"
+    }
+
+    # preds
+    predictor = PredictorFactory.get_predictor(**data_pred)
+    preds = predictor.predict(X_val) # 0 0 1
+    probs = predictor.predict_proba(X_val)
+    preds_labels = predictor.predict_labels(X_val)
+
+
+    # Val metrics
+    evaluator = Evaluator() # include average later appr.
+    val_metrics = evaluator.compute_metrics(y_val, preds)
+
+    # add to results
+    results.val.metrics = val_metrics
+    results.val.labels = y_val
+    results.val.preds = preds
+    results.val.probs = probs
+
+
+    # ---------------- 5. Logging --------------------
+    logging(cfg.experiment_name, 'Tuning', artifacts, results, model_type)
 
 
 

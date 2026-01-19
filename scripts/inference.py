@@ -37,7 +37,6 @@ def main(cfg: DictConfig):
         data_pred = {
             "model_type": model_type,
             "model": model,
-            "scaler": scaler,
             "encoder": encoder,
             "device": "cpu"
         }
@@ -66,7 +65,7 @@ def main(cfg: DictConfig):
 
 
     # preds
-    preds = predictor.predict(X_values)
+    preds = predictor.predict(X_values) # 0 0 1 7 ....
     print(preds)
     print(preds.shape) # number of samples x 1 (predicted class, BENINGN, DoS.....)
 
@@ -74,6 +73,10 @@ def main(cfg: DictConfig):
     probs = predictor.predict_proba(X_values)
     print(probs)
     print(probs.shape) # number of samples x number of labels
+
+    # preds -> human labels
+    preds_labels = predictor.predict_labels(X_values) # DDos, BENIGN....
+    print(preds_labels)
 
 
     

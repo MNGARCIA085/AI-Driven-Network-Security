@@ -22,7 +22,8 @@ def sample_data():
     y_train = np.random.randint(0, 2, 20)
     X_val = np.random.rand(10, 4)
     y_val = np.random.randint(0, 2, 10)
-    return X_train, y_train, X_val, y_val
+    num_classes = 2
+    return X_train, y_train, X_val, y_val, num_classes
 
 
 @pytest.fixture
@@ -45,28 +46,41 @@ def cfg():
 # ---------- TESTS ----------
 
 def test_nn_tuner_init(cfg, sample_data):
-    X_train, y_train, X_val, y_val = sample_data
-    tuner = NNTuner(cfg, X_train, y_train, X_val, y_val, num_classes=2)
-    assert tuner.input_size == X_train.shape[1]
+    X_train, y_train, X_val, y_val, num_classes = sample_data
+    tuner = NNTuner(cfg, X_train, y_train, X_val, y_val, num_classes)
+    # assert tuner.input_size == X_train.shape[1], only if i pass input_size, for now im doing this inside the class
     assert tuner.num_classes == 2
     assert tuner.device in ["cpu", "cuda"]
 
 
 def test_nn_tuner_get_config(cfg, sample_data):
-    X_train, y_train, X_val, y_val = sample_data
-    tuner = NNTuner(cfg, X_train, y_train, X_val, y_val, num_classes=2)
+    X_train, y_train, X_val, y_val, num_classes = sample_data
+    tuner = NNTuner(cfg, X_train, y_train, X_val, y_val, num_classes)
     config = tuner.get_tune_config()
-    assert "lr" in config and "hidden1" in config
+    assert "training.lr" in config and "model.hidden1" in config
 
 
+
+
+
+
+
+"""
+from torch.utils.data import DataLoader, TensorDataset
+
+
+# belongs more to train!!!!!!!!!!
 def test_nn_tuner_train_one_epoch(cfg, sample_data):
-    X_train, y_train, X_val, y_val = sample_data
-    tuner = NNTuner(cfg, X_train, y_train, X_val, y_val, num_classes=2)
-    model = torch.nn.Linear(4, 2)
-    loader, _ = tuner.create_loaders(batch_size=4)
+    X_train, y_train, X_val, y_val, num_classes = sample_data
+    tuner = NNTuner(cfg, X_train, y_train, X_val, y_val, num_classes)
+    model = torch.nn.Linear(4, 2)    
+    loader = DataLoader(
+            TensorDataset(torch.tensor(X_train, dtype=torch.float32), torch.tensor(y_train, dtype=torch.long)),
+            batch_size=4, shuffle=True
+    )
     opt = torch.optim.Adam(model.parameters(), lr=1e-3)
     loss_fn = torch.nn.CrossEntropyLoss()
-    loss, acc = tuner.train_one_epoch(model, loader, opt, loss_fn)
+    loss, acc = tuner.train_one_epoch(model, loader, opt, loss_fn) is not a tuner fn anymore
     assert loss > 0
     assert 0 <= acc <= 1
-
+"""

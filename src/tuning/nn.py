@@ -1,14 +1,12 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, TensorDataset
 import numpy as np
 import ray
 from .base import BaseTuner
 from ray import tune
 from ray.tune.schedulers import ASHAScheduler
 from src.models.nnet import NNModel
-from src.utils.metrics import compute_metrics
 from src.utils.results import Results, Metrics
 from .callbacks import EarlyStopping,LRReducer
 from src.training.nn import NNTrainer
@@ -23,14 +21,22 @@ class NNTuner(BaseTuner):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
+
+    # Tuning config
+    def get_tune_config(self):
+        return {
+            "model.hidden1": tune.choice(self.cfg.hidden1),
+            "model.hidden2": tune.choice(self.cfg.hidden2),
+            "training.batch_size": tune.choice(self.cfg.batch_size),
+            "training.lr": tune.loguniform(self.cfg.lr.min, self.cfg.lr.max),
+            "training.epochs": 5
+        }
+
+
     # --- Ray train function ---
     @staticmethod
-    def train_model_ray(config, X_train_id, y_train_id, X_val_id, y_val_id, num_classes):
-
-        X_train = X_train_id # no need for X_train = ray.get(X_train_id); the call in the main module already desiarilize it
-        y_train = y_train_id
-        X_val = X_val_id
-        y_val = y_val_id
+    def train_model_ray(config, X_train, y_train, X_val, y_val, num_classes):
+        # Note: no need for X_train = ray.get(X_train_id); the call in the main module already desiarilize it
 
         input_size = X_train.shape[1]
 
@@ -73,15 +79,7 @@ class NNTuner(BaseTuner):
 
 
 
-    # Tuning config
-    def get_tune_config(self):
-        return {
-            "model.hidden1": tune.choice(self.cfg.hidden1),
-            "model.hidden2": tune.choice(self.cfg.hidden2),
-            "training.batch_size": tune.choice(self.cfg.batch_size),
-            "training.lr": tune.loguniform(self.cfg.lr.min, self.cfg.lr.max),
-            "training.epochs": 5 # later add epcosh_trials too
-        }
+    
 
 
 

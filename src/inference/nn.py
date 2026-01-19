@@ -6,12 +6,13 @@ from .base import BasePredictor
 
 import torch.nn as nn
 
+
+
 class NNPredictor(BasePredictor):
     """Predictor for multiclass neural network models."""
 
-    def __init__(self, model, encoder, scaler, device="cpu"):
+    def __init__(self, model, encoder, device="cpu"):
         super().__init__(model, encoder)
-        self.scaler = scaler
         self.device = device
         self.model.to(device)
         self.model.eval()
