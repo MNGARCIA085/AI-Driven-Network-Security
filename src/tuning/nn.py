@@ -19,8 +19,6 @@ class NNTuner(BaseTuner):
     def __init__(self, cfg, X_train, y_train, X_val, y_val, num_classes): # see params later
         super().__init__(cfg, X_train, y_train, X_val, y_val) # parent class owns them
         
-
-        #self.input_size = X_train.shape[1]
         self.num_classes = num_classes
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -29,7 +27,7 @@ class NNTuner(BaseTuner):
     @staticmethod
     def train_model_ray(config, X_train_id, y_train_id, X_val_id, y_val_id, num_classes):
 
-        X_train = X_train_id # no X_train = ray.get(X_train_id); the call already desrialize it
+        X_train = X_train_id # no need for X_train = ray.get(X_train_id); the call in the main module already desiarilize it
         y_train = y_train_id
         X_val = X_val_id
         y_val = y_val_id
@@ -41,7 +39,7 @@ class NNTuner(BaseTuner):
             num_classes=num_classes,
             hidden1=config["model.hidden1"],
             hidden2=config["model.hidden2"]
-        ) #.to(self.device)
+        ) #.to(self.device) # not self in ray!!!
 
         optimizer = optim.Adam(model.parameters(), lr=config["training.lr"])
         criterion = nn.CrossEntropyLoss()
@@ -52,7 +50,7 @@ class NNTuner(BaseTuner):
         #------------------
 
         
-        for _ in range(5):  # epochs for tuning; self.cfg.epochs_trials; change later!!!!!
+        for _ in range(config["training.epochs"]):
             trainer.train_one_epoch(model, train_loader, optimizer, criterion)
             results = trainer.eval_one_epoch(model, val_loader, criterion)
             

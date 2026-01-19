@@ -179,3 +179,4 @@ class BasePreprocessor(ABC):
         """Preprocess a single new sample (1 row or dict)."""
         pass
 
+

@@ -9,11 +9,11 @@ from .base import BaseTrainer
 
 
 from src.models.nnet import NNModel
-from src.utils.metrics import compute_metrics
 from src.utils.results import Results, Metrics
 from .callbacks import EarlyStopping,LRReducer
 
 
+from src.evaluation.base import Evaluator
 
 
 class NNTrainer(BaseTrainer):
@@ -92,32 +92,17 @@ class NNTrainer(BaseTrainer):
                 preds.extend(out.argmax(1).cpu().numpy())
                 labels.extend(yb.cpu().numpy())
 
-        # Use generic compute_metrics
-        metrics = compute_metrics(
-            labels=labels,
-            preds=preds,
-            total_loss=total_loss,
-            total_samples=total_samples,
-            average=self.average,
-        )
+
+        
+        evaluator = Evaluator(self.average)
+        metrics = evaluator.compute_metrics(
+                labels,
+                preds,
+                total_loss,
+                total_samples,
+            )
 
         return metrics
-
-        # for now!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        return {**metrics, "preds": np.array(preds), "labels": np.array(labels), "probs": np.array(probs)}
-
-        if return_raw:
-            # Return metrics + raw arrays
-            return {
-                **metrics,
-                "preds": np.array(preds),
-                "labels": np.array(labels),
-                "probs": np.array(probs),
-            }
-
-        return metrics
-
-
 
 
 

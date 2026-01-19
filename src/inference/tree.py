@@ -27,16 +27,3 @@ class TreePredictor(BasePredictor):
         return decoded #return decoded[0] if np.ndim(X) == 1 else decoded
         
 
-
-
-
-
-
-
-"""
-def eval_model(self, model, X, y):
-        preds = model.predict(X)
-        probs = model.predict_proba(X)  # for ROC and AUC
-        metrics = compute_metrics(y, preds, self.average)
-        return {"metrics":metrics, "preds": np.array(preds), "labels": np.array(y), "probs": np.array(probs)}
-"""
