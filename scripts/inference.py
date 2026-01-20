@@ -7,6 +7,7 @@ from omegaconf import DictConfig
 from src.utils.logging import select_best_model
 from src.preprocessors.factory import PreprocessorFactory 
 from src.inference.factory import PredictorFactory
+from src.config.data import build_data_config
 
 
 @hydra.main(config_path="../config", config_name="config", version_base=None)
@@ -57,7 +58,8 @@ def main(cfg: DictConfig):
 
         
     # Preprocess data
-    preprocessor = PreprocessorFactory.get_preprocessor(model_type, cfg, cfg.preprocessor) 
+    data_cfg = build_data_config(cfg.preprocessor, cfg)
+    preprocessor = PreprocessorFactory.get_preprocessor(model_type, data_cfg)
     X_values = preprocessor.preprocess_inference(**data_prep)
 
     # get predictor

@@ -10,6 +10,7 @@ from src.inference.factory import PredictorFactory
 from src.utils.logging import log_test_results, select_best_model
 from src.evaluation.base import Evaluator
 from src.utils.results import TestResults, Metrics
+from src.config.data import build_data_config
 
 
 @hydra.main(config_path="../config", config_name="config", version_base=None)
@@ -64,7 +65,8 @@ def main(cfg: DictConfig):
 
 
     # 3. Preprocess test data
-    preprocessor = PreprocessorFactory.get_preprocessor(model_type, cfg, cfg.preprocessor) 
+    data_cfg = build_data_config(cfg.preprocessor, cfg)
+    preprocessor = PreprocessorFactory.get_preprocessor(model_type,data_cfg)
     X_values, y_encoded = preprocessor.preprocess_test(**data_prep)
 
 

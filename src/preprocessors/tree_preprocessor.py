@@ -4,8 +4,8 @@ import pandas as pd
 
 class TreePreprocessor(BasePreprocessor):
     
-    def __init__(self, global_cfg, pre_cfg):
-        super().__init__(global_cfg, pre_cfg)
+    def __init__(self, data_cfg):
+        super().__init__(data_cfg)
 
 
     def preprocess(self):

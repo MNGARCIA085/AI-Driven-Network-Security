@@ -35,7 +35,7 @@ class NNTuner(BaseTuner):
 
     # --- Ray train function ---
     @staticmethod
-    def train_model_ray(config, X_train, y_train, X_val, y_val, num_classes):
+    def train_model_ray(config, X_train, y_train, X_val, y_val, average, num_classes):
         # Note: no need for X_train = ray.get(X_train_id); the call in the main module already desiarilize it
 
         input_size = X_train.shape[1]
@@ -45,13 +45,13 @@ class NNTuner(BaseTuner):
             num_classes=num_classes,
             hidden1=config["model.hidden1"],
             hidden2=config["model.hidden2"]
-        ) #.to(self.device) # not self in ray!!!
+        ) #.to(device) # not self in ray!!!
 
         optimizer = optim.Adam(model.parameters(), lr=config["training.lr"])
         criterion = nn.CrossEntropyLoss()
     
         # create a trainer
-        trainer = NNTrainer(num_classes, 'weighted') # no hardcoding later!!!!!
+        trainer = NNTrainer(num_classes, average)
         train_loader, val_loader = trainer.create_loaders(X_train, y_train, X_val, y_val,32)
         #------------------
 

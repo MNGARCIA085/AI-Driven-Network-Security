@@ -6,7 +6,7 @@ from src.training.factory import TrainerFactory
 from src.inference.factory import PredictorFactory
 from src.evaluation.base import Evaluator
 from src.utils.logging import logging
-
+from src.config.data import build_data_config
 
 
 
@@ -18,8 +18,9 @@ def main(cfg: DictConfig):
     model_type = cfg.model_type
     print(f"\nSelected model: {model_type}")
 
-    # Preprocessing
-    preprocessor = PreprocessorFactory.get_preprocessor(model_type, cfg, cfg.preprocessor)
+    # preprocessing
+    data_cfg = build_data_config(cfg.preprocessor, cfg)
+    preprocessor = PreprocessorFactory.get_preprocessor(model_type,data_cfg)
     X_train, X_val, y_train, y_val, artifacts = preprocessor.preprocess() # rename to clarify are preprocessed
     artifacts = preprocessor.get_artifacts()
 
@@ -87,7 +88,9 @@ if __name__ == "__main__":
 
 
 
-
+"""
+python -m scripts.training model_type=nn training=nn
+"""
 
 
 

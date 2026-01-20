@@ -5,9 +5,11 @@ from src.preprocessors.factory import PreprocessorFactory
 from src.tuning.factory import TunerFactory
 from src.utils.logging import logging
 from src.training.factory import TrainerFactory
-from src.utils.config import unflatten_config
+from src.utils.config_utils import unflatten_config
 from src.inference.factory import PredictorFactory
 from src.evaluation.base import Evaluator
+from src.config.data import build_data_config
+from src.config.tuning.factory import build_tuning_config
 
 
 
@@ -20,15 +22,27 @@ def main(cfg: DictConfig):
     print(f"\nSelected model: {model_type}")
 
     # -------------- 1. Preprocessing ----------------------
-    preprocessor = PreprocessorFactory.get_preprocessor(model_type, cfg, cfg.preprocessor)
+    data_cfg = build_data_config(cfg.preprocessor, cfg)
+    preprocessor = PreprocessorFactory.get_preprocessor(model_type,data_cfg)
     X_train, X_val, y_train, y_val, artifacts = preprocessor.preprocess()
     artifacts = preprocessor.get_artifacts()
 
     # ----------- 2. Tuning--------------------------
-    cfg_tuning = OmegaConf.load(f"config/tuning/{model_type}.yaml") # use tuning/nn.yaml or tuning/tree.yaml....
+    """
+    cfg_tuning = OmegaConf.load(f"config/tuning/{model_type}.yaml") # 
+        uses tuning/nn.yaml or tuning/tree.yaml....
+        hydra does not overrides this
+        not ideal
+    """
+    
+    tuning_cfg = build_tuning_config(model_type, cfg.tuning) # raw_cfg
+    print(tuning_cfg)
+
+    
+
     tuner = TunerFactory.get_tuner(
         model_type=model_type,
-        cfg=cfg_tuning,
+        cfg=tuning_cfg,
         X_train=X_train,
         y_train=y_train,
         X_val=X_val,
@@ -36,7 +50,7 @@ def main(cfg: DictConfig):
         preprocessor=preprocessor,
     ) # returns for ex NNTuner(cfg_tuning, X_train, y_train, X_val, y_val, num_classes) or TreeTuner...
 
-    best_config = tuner.tune(num_samples=cfg.tuning.num_samples)
+    best_config = tuner.tune()
     print(best_config)
     config = unflatten_config(best_config)
 
@@ -92,12 +106,21 @@ if __name__ == "__main__":
 
 
 
+"""
+REAL EXEC:
+
+
+python -m scripts.tuning tuning=nn
+python -m scripts.tuning tuning=tree
+
+-> python -m scripts.tuning model_type=tree tuning=tree tuning.num_samples=4
 
 """
-python -m src.scripts.tuning
-python -m src.scripts.tuning model_type=tree
-python -m src.scripts.tuning -m model_type=nn,tree
-"""
+
+
+
+
+
 
 
 # see later // training

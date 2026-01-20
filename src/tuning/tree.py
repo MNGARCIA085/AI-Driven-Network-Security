@@ -14,7 +14,6 @@ from src.evaluation.base import Evaluator
 class TreeTuner(BaseTuner):
     def __init__(self, cfg, X_train, y_train, X_val, y_val, num_classes):
         super().__init__(cfg, X_train, y_train, X_val, y_val) 
-
         self.num_classes = num_classes # maybe to parent later!!!!
 
 
@@ -29,7 +28,7 @@ class TreeTuner(BaseTuner):
 
     # --- Ray train function ---
     @staticmethod
-    def train_model_ray(config, X_train, y_train, X_val, y_val, num_classes):
+    def train_model_ray(config, X_train, y_train, X_val, y_val, average, num_classes): 
 
         model = TreeModel(
             criterion=config["model.criterion"],
@@ -45,7 +44,7 @@ class TreeTuner(BaseTuner):
         preds = predictor.predict(X_val)
 
         # -- Eval
-        evaluator = Evaluator() # weighted
+        evaluator = Evaluator(average) 
         metrics = evaluator.compute_metrics(y_val, preds)
 
         # report to tune

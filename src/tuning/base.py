@@ -18,11 +18,11 @@ class BaseTuner(): # ABC
         self.y_train_id = ray.put(y_train)
         self.X_val_id = ray.put(X_val)
         self.y_val_id = ray.put(y_val)
-        self.average = cfg.average  # common for metric computations
+
 
     # ---------------- Methods ---------------- #
     @staticmethod
-    def train_model_ray(config, X_train_id, y_train_id, X_val_id, y_val_id, num_classes):
+    def train_model_ray(config, X_train_id, y_train_id, X_val_id, y_val_id, average, num_classes): # full signature or use config 
         """Train one model configuration for Ray Tune."""
         pass
 
@@ -33,7 +33,7 @@ class BaseTuner(): # ABC
 
 
     # ---------------- Shared method ---------------- #
-    def tune(self, num_samples=5): # -> ok
+    def tune(self): # self is ok here
         """
         Generic Ray Tune wrapper.
         Subclasses provide _train_model_ray and get_tune_config.
@@ -61,11 +61,12 @@ class BaseTuner(): # ABC
                 X_val=self.X_val_id,
                 y_val=self.y_val_id,
                 num_classes=self.num_classes,
+                average=self.cfg.average,
             ),
             param_space=config,
             tune_config=tune.TuneConfig(
                 scheduler=scheduler,
-                num_samples=num_samples,
+                num_samples=self.cfg.num_samples,
             ),
         )
 

@@ -4,21 +4,23 @@ import numpy as np
 from sklearn.preprocessing import LabelEncoder, StandardScaler, MinMaxScaler, RobustScaler, Normalizer
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
+from src.config.data import DataConfig
+
+
 
 
 class BasePreprocessor(ABC):
     
-    def __init__(self, global_cfg, pre_cfg):
+    def __init__(self, data_conf: DataConfig):
+        self.path = data_conf.path
+        self.features = data_conf.features
+        self.batch_size = data_conf.batch_size
+        self.balance_factor = data_conf.balance_factor
+        self.val_size = data_conf.val_size
+        self.random_state = data_conf.random_state
+        self.scaler_type = data_conf.scaler_type
 
-        self.path = pre_cfg.path
-        self.features = pre_cfg.features
-        self.batch_size = global_cfg.batch_size
-        self.balance_factor = pre_cfg.balance_factor
-        self.val_size = pre_cfg.val_size
-        self.random_state = global_cfg.random_state
-        self.scaler_type = pre_cfg.scaler_type  # 'standard', 'minmax', 'robust', 'none'
         self.scaler = None
-
 
         # Data placeholders
         self.df = None
