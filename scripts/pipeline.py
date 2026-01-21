@@ -15,7 +15,8 @@ def main(cfg: DictConfig):
 
 
     # Tuning different models
-    model_types = "nn,tree"
+    models = "nn,tree"
+
 
 
     cmds = [
@@ -23,7 +24,7 @@ def main(cfg: DictConfig):
         "-m",
         "scripts.tuning",
         "-m", # --multirun
-        f"model_type={model_types}",
+        f"model_type={models}",
         f"preprocessor.val_size={val_sizes}",
         f"preprocessor.balance_factor={balances_factors}",
         f"preprocessor.scaler_type={scaler_types}"

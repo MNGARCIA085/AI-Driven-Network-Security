@@ -18,7 +18,7 @@ def main(cfg: DictConfig):
 
 
     # get model type (nn, tree.....)
-    model_type = cfg.model_type
+    model_type = cfg.model_type.name
     print(f"\nSelected model: {model_type}")
 
     # -------------- 1. Preprocessing ----------------------
@@ -35,11 +35,10 @@ def main(cfg: DictConfig):
         not ideal
     """
     
-    tuning_cfg = build_tuning_config(model_type, cfg.tuning) # raw_cfg
+    tuning_cfg = build_tuning_config(model_type, cfg.model_type.tuning) # raw_cfg
     print(tuning_cfg)
 
     
-
     tuner = TunerFactory.get_tuner(
         model_type=model_type,
         cfg=tuning_cfg,
@@ -109,11 +108,8 @@ if __name__ == "__main__":
 """
 REAL EXEC:
 
+python -m scripts.training -m model_type=nn,tree preprocessor.val_size=.4,.6 model_type.tuning.num_samples=4
 
-python -m scripts.tuning tuning=nn
-python -m scripts.tuning tuning=tree
-
--> python -m scripts.tuning model_type=tree tuning=tree tuning.num_samples=4
 
 """
 

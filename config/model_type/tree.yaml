@@ -1,0 +1,6 @@
+defaults:
+  - /models: tree
+  - /tuning: tree
+  - /training: tree
+
+name: tree

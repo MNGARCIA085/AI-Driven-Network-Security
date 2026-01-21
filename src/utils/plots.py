@@ -8,6 +8,9 @@ import os
 from hydra.utils import to_absolute_path
 
 
+from hydra.core.hydra_config import HydraConfig
+
+
 def plot_train_val(train_values, val_values, plot_name, ylabel, xlabel="Epoch"):
     """
     Plot training and validation curves (it can be for loss or accs)
@@ -29,7 +32,13 @@ def plot_train_val(train_values, val_values, plot_name, ylabel, xlabel="Epoch"):
     plt.ylabel(ylabel)
     plt.legend()
     plt.grid(True)
-    save_path = os.path.join(os.getcwd(), plot_name)
+
+
+    out_dir = HydraConfig.get().runtime.output_dir
+    save_path = os.path.join(out_dir, plot_name)
+
+    #save_path = os.path.join(os.getcwd(), plot_name); leads to race conds.
+    
     plt.savefig(save_path)
     plt.close()
     return save_path
@@ -55,7 +64,12 @@ def plot_cm(labels, preds):
     plt.xlabel("Predicted")
     plt.ylabel("True")
     plt.title("Confusion Matrix")
-    cm_path = os.path.join(os.getcwd(), "confusion_matrix.png")
+    
+    #cm_path = os.path.join(os.getcwd(), "confusion_matrix.png")
+    out_dir = HydraConfig.get().runtime.output_dir
+    cm_path = os.path.join(out_dir, "confusion_matrix.png")
+
+
     plt.savefig(cm_path)
     plt.close()
     return cm_path
@@ -96,7 +110,13 @@ def plot_roc(labels, probs):
 
     # Save figure and log to MLflow
     #roc_path = "roc_multiclass.png"
-    roc_path = os.path.join(os.getcwd(), "roc_multiclass.png") # save in appropiate output dir so i dont have problems with // exec
+    #roc_path = os.path.join(os.getcwd(), "roc_multiclass.png") # save in appropiate output dir so i dont have problems with // exec
+    
+
+    out_dir = HydraConfig.get().runtime.output_dir
+    roc_path = os.path.join(out_dir, "roc_multiclass.png")
+
+
     plt.savefig(roc_path)
     plt.close()
 

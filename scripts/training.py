@@ -15,7 +15,7 @@ from src.config.data import build_data_config
 def main(cfg: DictConfig):
 
     # get model type (nn, tree.....)
-    model_type = cfg.model_type
+    model_type = cfg.model_type.name
     print(f"\nSelected model: {model_type}")
 
     # preprocessing
@@ -89,7 +89,7 @@ if __name__ == "__main__":
 
 
 """
-python -m scripts.training model_type=nn training=nn
+python -m scripts.training -m model_type=nn,tree preprocessor.val_size=.4,.6
 """
 
 

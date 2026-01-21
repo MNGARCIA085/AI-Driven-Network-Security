@@ -1,0 +1,7 @@
+# this file ONLY selects defaults
+defaults:
+  - /models: nn
+  - /tuning: nn
+  - /training: nn
+
+name: nn
