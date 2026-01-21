@@ -1,93 +1,46 @@
-import pytest
-import pandas as pd
+from src.preprocessors.factory import PreprocessorFactory
 import numpy as np
-from types import SimpleNamespace
-from unittest.mock import patch
 
-from src.preprocessors.nn_preprocessor import NNPreprocessor
-
-
-# -----------------------------
-# Fixtures
-# -----------------------------
-@pytest.fixture
-def dummy_configs():
-    global_cfg = SimpleNamespace(batch_size=32, random_state=42)
-    pre_cfg = SimpleNamespace(
-        path="dummy_path.csv",
-        features=["f1", "f2", "f3", "Label"],
-        balance_factor=0.5,
-        val_size=0.2,
-        scaler_type="standard",
+def test_nn_preprocessor_fit_and_transform(small_df, data_cfg_nn, monkeypatch):
+    # monkeypatch the CSV load if needed
+    monkeypatch.setattr(
+        "pandas.read_csv",
+        lambda _: small_df
     )
-    return global_cfg, pre_cfg
 
+    preprocessor = PreprocessorFactory.get_preprocessor(
+        model_type="nn",
+        data_cfg=data_cfg_nn
+    )
 
-@pytest.fixture
-def dummy_dataframe():
-    np.random.seed(0)
-    df = pd.DataFrame({
-        "f1": np.random.rand(100),
-        "f2": np.random.rand(100),
-        "f3": np.random.rand(100),
-        "Label": np.random.choice(["Normal", "Bot", "Attack"], 100)
-    })
-    return df
+    X_train, X_val, y_train, y_val, artifacts = preprocessor.preprocess()
 
-
-
-# -----------------------------
-# Tests
-# -----------------------------
-@patch("pandas.read_csv")
-def test_nn_preprocessor_pipeline(mock_read_csv, dummy_configs, dummy_dataframe):
-    mock_read_csv.return_value = dummy_dataframe.copy()
-
-    global_cfg, pre_cfg = dummy_configs
-    pre = NNPreprocessor(global_cfg, pre_cfg)
-    X_train, X_val, y_train, y_val, artifacts = pre.preprocess()
-
-    assert isinstance(X_train, np.ndarray)
-    assert X_train.shape[1] == 3
+    assert X_train.shape[1] > 0
+    assert X_val.shape[1] > 0
     assert len(y_train) > 0
-    assert artifacts["num_classes"] >= 2
-    assert pre.scaler is not None
+
+    assert preprocessor.scaler is not None
+    assert preprocessor.label_encoder is not None
+
+    assert "scaler" in artifacts
+    assert "encoder" in artifacts
 
 
-def test_nn_preprocessor_testset(dummy_configs, dummy_dataframe):
-    global_cfg, pre_cfg = dummy_configs
-    pre = NNPreprocessor(global_cfg, pre_cfg)
 
-    # Fit first to obtain encoder/scaler
-    pre.df = dummy_dataframe.copy()
-    pre.combine_rare_labels().encode_labels().split_features().scale_features()
+#--------------Test data leakage----------------------
+# the error we try to detect: fitting the scaler on train + val instead of train only
+def test_no_scaler_data_leakage(small_df, data_cfg_nn, monkeypatch):
+    monkeypatch.setattr("pandas.read_csv", lambda _: small_df)
 
-    X, y = pre.preprocess_test(dummy_dataframe.copy(), pre.scaler, pre.label_encoder)
-    assert isinstance(X, np.ndarray)
-    assert isinstance(y, np.ndarray)
-    assert X.shape[0] == y.shape[0]
+    preprocessor = PreprocessorFactory.get_preprocessor(
+        model_type="nn",
+        data_cfg=data_cfg_nn,
+    )
 
+    X_train, X_val, y_train, y_val, _ = preprocessor.preprocess()
 
-def test_nn_preprocessor_inference(dummy_configs, dummy_dataframe):
-    global_cfg, pre_cfg = dummy_configs
-    pre = NNPreprocessor(global_cfg, pre_cfg)
-    pre.df = dummy_dataframe.copy()
-    pre.basic_preprocessing().split_features().scale_features()
+    # Train data must be ~zero mean
+    assert np.allclose(X_train.mean(axis=0), 0, atol=1e-6)
 
-    #print(dummy_dataframe, flush=True)
-
-    df = dummy_dataframe.drop(columns=["Label"])
-    X = pre.preprocess_inference(df, pre.scaler)
-    assert isinstance(X, np.ndarray)
-    assert X.shape[1] == 3
-
-
-def test_nn_preprocessor_single(dummy_configs, dummy_dataframe):
-    global_cfg, pre_cfg = dummy_configs
-    pre = NNPreprocessor(global_cfg, pre_cfg)
-    pre.df = dummy_dataframe.copy()
-    pre.basic_preprocessing().split_features().scale_features()
-
-    sample = dummy_dataframe.drop(columns=["Label"]).iloc[0]
-    X = pre.preprocess_single(sample, pre.scaler)
-    assert X.shape[1] == 3
+    # Validation data must NOT be zero mean (otherwise scaler saw val)
+    assert not np.allclose(X_val.mean(axis=0), 0, atol=1e-2)

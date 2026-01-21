@@ -39,8 +39,10 @@ class BasePreprocessor():
         self.df = pd.read_csv(self.data_cfg.path)
         return self
 
+
+    """
     def basic_preprocessing(self):
-        """Remove duplicates, NaNs, and infinities."""
+        Remove duplicates, NaNs, and infinities.
         df = self.df.drop_duplicates().dropna()
         df.replace([np.inf, -np.inf], np.nan, inplace=True)
         df = df.dropna()
@@ -51,6 +53,26 @@ class BasePreprocessor():
 
         self.df = df
         return self
+    """
+
+
+    def basic_preprocessing(self):
+        df = self.df.drop_duplicates().dropna()
+        df.replace([np.inf, -np.inf], np.nan, inplace=True)
+        df = df.dropna()
+
+        #label_col = self.data_cfg.label_col, for later, not harcode the label
+
+        # select features but keep the label
+        if self.data_cfg.features:
+            existing_features = [f for f in self.data_cfg.features if f in df.columns]
+            if 'Label' not in existing_features:
+                existing_features.append('Label')
+            df = df[existing_features]
+
+        self.df = df
+        return self
+
 
 
     # ---------------------------
