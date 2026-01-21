@@ -11,15 +11,12 @@ from src.config.data import DataConfig
 
 class BasePreprocessor(ABC):
     
-    def __init__(self, data_conf: DataConfig):
-        self.path = data_conf.path
-        self.features = data_conf.features
-        self.batch_size = data_conf.batch_size
-        self.balance_factor = data_conf.balance_factor
-        self.val_size = data_conf.val_size
-        self.random_state = data_conf.random_state
-        self.scaler_type = data_conf.scaler_type
+    def __init__(self, data_cfg: DataConfig):
 
+        # conf
+        self.data_cfg = data_cfg
+ 
+        # scaler
         self.scaler = None
 
         # Data placeholders
@@ -38,7 +35,7 @@ class BasePreprocessor(ABC):
     # ---------------------------
     def load_data(self):
         """Load raw data from CSV."""
-        self.df = pd.read_csv(self.path)
+        self.df = pd.read_csv(self.data_cfg.path)
         return self
 
     def basic_preprocessing(self):
@@ -46,13 +43,10 @@ class BasePreprocessor(ABC):
         df = self.df.drop_duplicates().dropna()
         df.replace([np.inf, -np.inf], np.nan, inplace=True)
         df = df.dropna()
-        if self.features:
+        if self.data_cfg.features:
             # keep only columns that exist
-            existing_features = [f for f in self.features if f in df.columns]
+            existing_features = [f for f in self.data_cfg.features if f in df.columns]
             df = df[existing_features]
-
-        #else:
-        #    self.features = self.X_train.columns
 
         self.df = df
         return self
@@ -90,7 +84,7 @@ class BasePreprocessor(ABC):
         X = self.df.drop('Label', axis=1)
         y = self.df['Label']
         X_train, X_val, y_train, y_val = train_test_split(
-            X, y, test_size=self.val_size, stratify=y, random_state=self.random_state
+            X, y, test_size=self.data_cfg.val_size, stratify=y, random_state=self.data_cfg.random_state
         )
         self.X_train, self.X_val = X_train, X_val
         self.y_train, self.y_val = y_train, y_val
@@ -102,7 +96,7 @@ class BasePreprocessor(ABC):
     # ---------------------------
     def apply_smote(self):
         """Apply SMOTE with balance_factor ∈ [0,1]."""
-        if self.balance_factor <= 0:
+        if self.data_cfg.balance_factor <= 0:
             return self
 
         class_counts = self.y_train.value_counts()
@@ -110,11 +104,11 @@ class BasePreprocessor(ABC):
 
         max_count = class_counts.max()
         sampling_strategy = {
-            cls: int(count + (max_count - count) * self.balance_factor)
+            cls: int(count + (max_count - count) * self.data_cfg.balance_factor)
             for cls, count in class_counts.items()
         }
 
-        smote = SMOTE(sampling_strategy=sampling_strategy, random_state=self.random_state)
+        smote = SMOTE(sampling_strategy=sampling_strategy, random_state=self.data_cfg.random_state)
         X_res, y_res = smote.fit_resample(self.X_train, self.y_train)
 
         self._class_dist_after_smote = pd.Series(y_res).value_counts().to_dict()
@@ -146,15 +140,15 @@ class BasePreprocessor(ABC):
     def get_artifacts(self):
         """Return all key artifacts and metadata for logging."""
         return {
-            "features": list(self.features) if self.features else list(self.X_train.columns),
-            "scaler_type": self.scaler_type,
+            "features": list(self.data_cfg.features) if self.data_cfg.features else list(self.X_train.columns),
+            "scaler_type": self.data_cfg.scaler_type,
             "scaler": self.scaler,
             "encoder": self.label_encoder,
             "input_size": getattr(self, "input_size", None),
             "num_classes": getattr(self, "num_classes", None),
-            "balance_factor": self.balance_factor,
-            "val_size": self.val_size,
-            "random_state": self.random_state,
+            "balance_factor": self.data_cfg.balance_factor,
+            "val_size": self.data_cfg.val_size,
+            "random_state": self.data_cfg.random_state,
             "class_dist_before_smote": self._class_dist_before_smote,
             "class_dist_after_smote": self._class_dist_after_smote,
             "train_shape": None if self.X_train is None else self.X_train.shape,

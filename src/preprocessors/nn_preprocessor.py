@@ -13,7 +13,7 @@ class NNPreprocessor(BasePreprocessor):
 
 
     def scale_features(self):
-        if self.scaler_type == "none":
+        if self.data_cfg.scaler_type == "none":
             return self
 
         # select scaler type
@@ -24,9 +24,9 @@ class NNPreprocessor(BasePreprocessor):
             "normalize": Normalizer,
         }
 
-        scaler_cls = scaler_map.get(self.scaler_type)
+        scaler_cls = scaler_map.get(self.data_cfg.scaler_type)
         if scaler_cls is None:
-            raise ValueError(f"Unknown scaler type: {self.scaler_type}")
+            raise ValueError(f"Unknown scaler type: {self.data_cfg.scaler_type}")
         self.scaler = scaler_cls()
 
         # fit (only with training data)        
@@ -89,7 +89,7 @@ class NNPreprocessor(BasePreprocessor):
         y_encoded = label_encoder.transform(y)
 
         # Apply scaling (if applicable)
-        if self.scaler_type != "none":
+        if self.data_cfg.scaler_type != "none":
             X = pd.DataFrame(scaler.transform(X)) #, columns=self.features)
 
         return X.values, y_encoded
@@ -109,10 +109,10 @@ class NNPreprocessor(BasePreprocessor):
         self.basic_preprocessing()
 
         df = self.df.drop('Label', axis=1) if 'Label' in self.df.columns else self.df
-        # -> for later df = self.df[self.features]; now i already pass it ok (without the label)
+        # -> for later df = self.df[self.data_cfg.features]; now i already pass it ok (without the label)
 
 
-        df = pd.DataFrame(scaler.transform(df)) #, columns=self.features)
+        df = pd.DataFrame(scaler.transform(df)) #, columns=self.data_cfg.features)
 
         return df.values
 
@@ -146,7 +146,7 @@ class NNPreprocessor(BasePreprocessor):
 
 
 """
- para poder pasar un scaler!!!
+
 
 class MyDataset:
     def __init__(self, pre_cfg, global_cfg, scaler=None):
