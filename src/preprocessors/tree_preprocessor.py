@@ -13,14 +13,14 @@ class TreePreprocessor(BasePreprocessor):
         return self.X_train.values, self.X_val.values, self.y_train.values, self.y_val.values, self.get_artifacts()
 
 
-    def preprocess_test(self, df, label_encoder, features=None): # for labeled test data
+    def preprocess_test(self, df): # for labeled test data
         """
         Preprocess a labeled test set for tree-based models.
         - Cleans and aligns features.
         - Combines rare labels.
         - Encodes labels with existing encoder (no scaling).
         """
-        if label_encoder is None:
+        if self.label_encoder is None:
             raise ValueError("Preprocessor missing fitted label encoder.")
 
         self.df = df.copy()
@@ -33,13 +33,14 @@ class TreePreprocessor(BasePreprocessor):
         y = self.df['Label']
 
         # Encode target labels
-        y_encoded = label_encoder.transform(y)
+        y_encoded = self.label_encoder.transform(y)
+        print(y_encoded)
 
         # No scaling for tree models
         return X.values, y_encoded
 
 
-    def preprocess_inference(self, df, features=None):
+    def preprocess_inference(self, df):
         """
         Preprocess new unlabeled data for tree-based models (no scaling, no label encoding).
         """

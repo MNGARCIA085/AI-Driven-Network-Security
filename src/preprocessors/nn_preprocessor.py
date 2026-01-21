@@ -56,10 +56,15 @@ class NNPreprocessor(BasePreprocessor):
         return self.X_train.values, self.X_val.values, self.y_train.values, self.y_val.values, self.get_artifacts()
 
 
+
+
+
+
+
     # ---------------------------
     # 2. Test set preprocessing
     # ---------------------------
-    def preprocess_test(self, df, scaler, label_encoder, features=None):
+    def preprocess_test(self, df):
         """
         Preprocess a labeled test set using fitted transformers.
         - Cleans and scales features.
@@ -67,7 +72,7 @@ class NNPreprocessor(BasePreprocessor):
         - Encodes labels with the existing label encoder.
         """
 
-        if scaler is None or label_encoder is None: # later -> or self.features is None:
+        if self.scaler is None or self.label_encoder is None: # later -> or self.features is None:
             raise ValueError("Preprocessor missing fitted scaler, encoder, or feature list.")
 
         # Copy and apply same parent logic
@@ -86,22 +91,26 @@ class NNPreprocessor(BasePreprocessor):
         y = self.df['Label']
 
         # Encode labels using the *existing* encoder
-        y_encoded = label_encoder.transform(y)
+        y_encoded = self.label_encoder.transform(y)
 
         # Apply scaling (if applicable)
         if self.data_cfg.scaler_type != "none":
-            X = pd.DataFrame(scaler.transform(X)) #, columns=self.features)
+            X = pd.DataFrame(self.scaler.transform(X)) #, columns=self.features)
 
         return X.values, y_encoded
+
+
+
+
 
 
 
     # ---------------------------
     # 3. Inference preprocessing (unlabeled dataset)
     # ---------------------------
-    def preprocess_inference(self, df, scaler, features=None):
+    def preprocess_inference(self, df):
         """Preprocess new unlabeled data (no fitting, no label encoding)."""
-        if scaler is None: # or label_encoder is None: # or self.features is None:
+        if self.scaler is None: # or label_encoder is None: # or self.features is None:
             raise ValueError("Preprocessor missing fitted scaler, encoder, or feature list.")
 
         self.df = df.copy()
@@ -111,8 +120,7 @@ class NNPreprocessor(BasePreprocessor):
         df = self.df.drop('Label', axis=1) if 'Label' in self.df.columns else self.df
         # -> for later df = self.df[self.data_cfg.features]; now i already pass it ok (without the label)
 
-
-        df = pd.DataFrame(scaler.transform(df)) #, columns=self.data_cfg.features)
+        df = pd.DataFrame(self.scaler.transform(df)) #, columns=self.data_cfg.features)
 
         return df.values
 
@@ -120,9 +128,9 @@ class NNPreprocessor(BasePreprocessor):
     # ---------------------------
     # 4. Inference preprocessing (single sample)
     # ---------------------------
-    def preprocess_single(self, sample, scaler):
+    def preprocess_single(self, sample):
         """Preprocess a single sample for inference."""
-        if scaler is None: # or self.features is None:
+        if self.scaler is None: # or self.features is None:
             raise ValueError("Preprocessor missing fitted scaler or feature list.")
 
         df = pd.DataFrame([sample]) if not isinstance(sample, pd.DataFrame) else sample
@@ -130,10 +138,12 @@ class NNPreprocessor(BasePreprocessor):
 
         #self.basic_preprocessing() .> not needed here, i already pass it ok
         #df = self.df[self.features]
-        df = pd.DataFrame(scaler.transform(df)) #, columns=self.features)
+        df = pd.DataFrame(self.scaler.transform(df)) #, columns=self.features)
 
         return df.values
 
+
+    
 
 
 

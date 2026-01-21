@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder, StandardScaler, MinMaxScaler, RobustScaler, Normalizer
@@ -9,12 +9,13 @@ from src.config.data import DataConfig
 
 
 
-class BasePreprocessor(ABC):
+class BasePreprocessor():
     
     def __init__(self, data_cfg: DataConfig):
 
         # conf
         self.data_cfg = data_cfg
+        self.label_encoder = None
  
         # scaler
         self.scaler = None
@@ -23,7 +24,7 @@ class BasePreprocessor(ABC):
         self.df = None
         self.X_train = self.X_val = None
         self.y_train = self.y_val = None
-        self.label_encoder = None
+        
 
         # Internal logging
         self._class_dist_before_smote = None
@@ -165,8 +166,11 @@ class BasePreprocessor(ABC):
         pass
 
 
+    # add preprocess test!!!!!
+
+
     @abstractmethod
-    def preprocess_inference(self, data):
+    def preprocess_inference(self, df):
         """Preprocess full test or inference dataset using fitted transformers."""
         pass
 
@@ -174,5 +178,15 @@ class BasePreprocessor(ABC):
     def preprocess_single(self, sample):
         """Preprocess a single new sample (1 row or dict)."""
         pass
+
+
+    # ---------------------------
+    # Load artifacts
+    # ---------------------------
+    def load_artifacts(self, artifacts: dict):
+        self.scaler = artifacts.get("scaler")
+        self.label_encoder = artifacts.get("label_encoder")
+        #self.features = artifacts.get("features")
+
 
 

@@ -35,6 +35,11 @@ def main(cfg: DictConfig):
         # data for prep.
         data_prep = {
             "df": df,
+            #"scaler": scaler,
+            #"label_encoder": encoder,
+        }
+
+        artifacts = {
             "scaler": scaler,
             "label_encoder": encoder,
         }
@@ -53,6 +58,10 @@ def main(cfg: DictConfig):
         
         data_prep = {
             "df": df,
+            #"label_encoder": encoder,
+        }
+
+        artifacts = {
             "label_encoder": encoder,
         }
 
@@ -61,12 +70,13 @@ def main(cfg: DictConfig):
             "model_type": model_type,
             "model": model,
             "encoder": encoder,
-        }     
+        }    
 
 
     # 3. Preprocess test data
     data_cfg = build_data_config(cfg.preprocessor, cfg)
     preprocessor = PreprocessorFactory.get_preprocessor(model_type,data_cfg)
+    preprocessor.load_artifacts(artifacts)
     X_values, y_encoded = preprocessor.preprocess_test(**data_prep)
 
 

@@ -32,8 +32,13 @@ def main(cfg: DictConfig):
 
         data_prep = {
             "df": df,
-            "scaler": scaler,
         }
+
+        artifacts = {
+            "scaler": scaler,
+            "label_encoder": encoder,
+        }
+
 
         data_pred = {
             "model_type": model_type,
@@ -49,6 +54,10 @@ def main(cfg: DictConfig):
             "df": df,
         }
 
+        artifacts = {
+            "label_encoder": encoder,
+        }
+
         data_pred = {
             "model_type": model_type,
             "model": model,
@@ -56,10 +65,12 @@ def main(cfg: DictConfig):
         }
 
 
+
         
     # Preprocess data
     data_cfg = build_data_config(cfg.preprocessor, cfg)
     preprocessor = PreprocessorFactory.get_preprocessor(model_type, data_cfg)
+    preprocessor.load_artifacts(artifacts) # note -> trees doesnt really needs it
     X_values = preprocessor.preprocess_inference(**data_prep)
 
     # get predictor
