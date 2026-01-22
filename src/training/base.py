@@ -8,7 +8,12 @@ from src.utils.results import Results, Metrics
 
 class BaseTrainer():
     """
-    Base training class
+    Base class for training models.
+
+    Attributes:
+        num_classes (int): Number of output classes for classification. 
+                           Required for NNs, ignored by tree-based models.
+        average: need it for multiclass
     """
 
     def __init__(self,  num_classes, average):

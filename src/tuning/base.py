@@ -12,12 +12,13 @@ class BaseTuner(): # ABC
     Handles Ray object storage, generic tune(), and metric averaging.
     """
 
-    def __init__(self, cfg, X_train, y_train, X_val, y_val):
+    def __init__(self, cfg, X_train, y_train, X_val, y_val, num_classes):
         self.cfg = cfg
         self.X_train_id = ray.put(X_train)
         self.y_train_id = ray.put(y_train)
         self.X_val_id = ray.put(X_val)
         self.y_val_id = ray.put(y_val)
+        self.num_classes = num_classes
 
 
     # ---------------- Methods ---------------- #

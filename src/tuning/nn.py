@@ -6,18 +6,18 @@ import ray
 from .base import BaseTuner
 from ray import tune
 from ray.tune.schedulers import ASHAScheduler
+
 from src.models.nnet import NNModel
 from src.utils.results import Results, Metrics
-from .callbacks import EarlyStopping,LRReducer
 from src.training.nn import NNTrainer
 
 
 
 class NNTuner(BaseTuner):
-    def __init__(self, cfg, X_train, y_train, X_val, y_val, num_classes): # see params later
-        super().__init__(cfg, X_train, y_train, X_val, y_val) # parent class owns them
+    def __init__(self, cfg, X_train, y_train, X_val, y_val, num_classes):
+        super().__init__(cfg, X_train, y_train, X_val, y_val, num_classes) # parent class owns them
         
-        self.num_classes = num_classes
+        #self.num_classes = num_classes
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
 

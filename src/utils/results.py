@@ -16,9 +16,9 @@ class Metrics:
 class StageResults:
     losses: Optional[List[float]] = None
     accs: Optional[List[float]] = None
-    preds: Optional[List[Any]] = None
-    labels: Optional[List[Any]] = None
-    probs: Optional[List[Any]] = None
+    #preds: Optional[List[Any]] = None
+    #labels: Optional[List[Any]] = None
+    #probs: Optional[List[Any]] = None
     #metrics: Metrics = field(default_factory=Metrics)
 
     @classmethod
