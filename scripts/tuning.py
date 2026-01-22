@@ -94,7 +94,7 @@ def main(cfg: DictConfig):
 
 
     # ---------------- 5. Logging --------------------
-    logging(cfg.experiment_name, 'Tuning', artifacts, results, model_type)
+    logging(cfg.experiment_name, 'Tuning', artifacts, results, model_type, 'tune')
 
 
 

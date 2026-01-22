@@ -77,7 +77,7 @@ def main(cfg: DictConfig):
 
 
     #-------------Logging --------------------------------
-    logging(cfg.experiment_name, 'Training', artifacts, results, model_type)
+    logging(cfg.experiment_name, 'Training', artifacts, results, model_type, 'train')
 
 
 

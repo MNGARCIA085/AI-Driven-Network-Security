@@ -1,3 +1,18 @@
+"""
+stage        = train | tune | eval
+model_type   = nn | tree | xgboost | ...
+dataset      = dataset_name_or_version
+task         = binary_classification | multiclass
+
+"""
+
+
+
+
+
+
+
+
 import mlflow
 import mlflow.sklearn
 import joblib
@@ -6,6 +21,7 @@ import json
 from mlflow.tracking import MlflowClient
 from pathlib import Path
 from .plots import plot_cm, plot_roc, plot_train_val
+from dataclasses import is_dataclass, asdict
 
 
 # Project root (2 levels up from this file)
@@ -21,98 +37,133 @@ os.makedirs(artifact_dir, exist_ok=True)
 
 
 
+# tags
+def log_tags(stage, model_type, dataset, extra_tags=None):
 
-# logging functions
-def logging(exp_name, run_name, artifacts, results, model_type):
+    tags = {
+        "stage": stage,
+        "model_type": model_type,
+        "task": "multiclass_classification",
+        "dataset": dataset,
+        "data_version": "v1",
 
-    # ensures artifact path is set
-    mlflow.set_experiment(exp_name)
+    }
 
-    # run
-    with mlflow.start_run(run_name=run_name):
-
-        # Tags
-        mlflow.set_tag("model_type", model_type)
-        mlflow.set_tag("data_version", "v1") # hardcoded for now
-        #mlflow.set_tag("data_version", artifacts["dvc_version"]) 
+    if extra_tags:
+        tags.update(extra_tags)
+    mlflow.set_tags(tags)
 
 
-        # Common params
-        mlflow.log_param("balance_factor", artifacts["balance_factor"])
-        mlflow.log_param("val_size", artifacts["val_size"])
-        mlflow.log_param("train_shape", str(artifacts["train_shape"]))
-        mlflow.log_param("val_shape", str(artifacts["val_shape"]))    
+# comon params
+def log_common_params(artifacts):
+    mlflow.log_param("balance_factor", artifacts["balance_factor"])
+    mlflow.log_param("val_size", artifacts["val_size"])
+    mlflow.log_param("train_shape", artifacts["train_shape"])
+    mlflow.log_param("val_shape", artifacts["val_shape"])
 
-        # Common artifacts
-        with open("features.json", "w") as f:
-            json.dump({"features": artifacts["features"]}, f, indent=2)
-        mlflow.log_artifact("features.json")
-        mlflow.log_dict(artifacts["class_dist_before_smote"], "class_dist_before_smote.json")
-        mlflow.log_dict(artifacts["class_dist_after_smote"], "class_dist_after_smote.json")
 
-        # encoder
-        encoder = artifacts["encoder"]
-        filename = "label_encoder.pkl"
-        joblib.dump(encoder, filename)
+
+# features, encoder and scaler
+def log_preprocessors(artifacts):
+    mlflow.log_dict({"features": artifacts["features"]}, "features.json")
+                # -> remove later appropiately to avoid race conditions!!!!!
+    mlflow.log_dict(artifacts["class_dist_before_smote"], "class_dist_before_smote.json")
+    mlflow.log_dict(artifacts["class_dist_after_smote"], "class_dist_after_smote.json")
+
+
+    # encoder
+    encoder = artifacts["encoder"]
+    filename = "label_encoder.pkl"
+    joblib.dump(encoder, filename)
+    mlflow.log_artifact(filename, artifact_path="preprocessor")
+    os.remove(filename)
+    mapping = dict(zip(encoder.classes_, range(len(encoder.classes_))))
+    mlflow.log_dict(mapping, "encoder_mapping.json")
+
+
+    # scaler (only for NNs)
+    if artifacts.get("scaler") is not None:
+        filename = "scaler.pkl"
+        joblib.dump(artifacts["scaler"], filename)
         mlflow.log_artifact(filename, artifact_path="preprocessor")
         os.remove(filename)
-        mapping = dict(zip(encoder.classes_, range(len(encoder.classes_))))
-        mlflow.log_dict(mapping, "encoder_mapping.json")
 
-
-        # Optional artifacts (scaler only for NNs)
-        if "scaler" in artifacts and artifacts["scaler"] is not None:
-            filename = "scaler.pkl"
-            joblib.dump(artifacts["scaler"], filename)
-            mlflow.log_artifact(filename, artifact_path="preprocessor")
-            os.remove(filename)
-
-            # scaler type
-            mlflow.log_param("scaler_type", artifacts["scaler_type"])
-
-
-        # Metrics (shared)
-        #for m in ["accuracy", "precision", "recall", "f1"]:
-        #    mlflow.log_metric(m, getattr(results.val.metrics, m))
-
-
-        for m, v in results.val.metrics.items():
-            mlflow.log_metric(m, v)
+        # scaler type
+        mlflow.log_param("scaler_type", artifacts["scaler_type"])
 
 
 
-        # Model-specific logs
+# metrics
+def log_metrics(metrics):
+    """
+    metrics: dict or dataclass / object with attributes
+    """
+    # Normalize to dict
+    if isinstance(metrics, dict):
+        metrics_dict = metrics
+    elif is_dataclass(metrics):
+        metrics_dict = asdict(metrics)
+    else:
+        # generic object with attributes
+        metrics_dict = vars(metrics)
+
+    # Log only valid numeric metrics
+    for k, v in metrics_dict.items():
+        if isinstance(v, (int, float)):
+            mlflow.log_metric(k, v)
+
+
+
+# hyperparams
+def log_hyperparams(results):
+    mlflow.log_params(results.hyperparams)
+
+
+# models
+def log_model(results, model_type):
+    if model_type == "nn":
+        mlflow.pytorch.log_model(results.model, artifact_path="model")
+    else:
+        mlflow.sklearn.log_model(results.model, artifact_path="model")
+
+
+# CM and ROC curves
+def log_plots(results, model_type, train_curves=False):
+    cm = plot_cm(results.labels, results.preds)
+    mlflow.log_artifact(cm)
+    os.remove(cm)
+
+    roc = plot_roc(results.labels, results.probs)
+    mlflow.log_artifact(roc)
+    os.remove(roc)
+
+
+# training curves
+def log_training_curves(train_data, val_data, filename, title):
+    loss_path = plot_train_val(train_data, val_data, filename, title)
+    mlflow.log_artifact(loss_path)
+    os.remove(loss_path)
+
+
+
+# later -> add tuning trials!!!
+
+
+# log exp. log_Experiment
+def logging(exp_name, run_name, artifacts, results, model_type, stage):
+    mlflow.set_experiment(exp_name)
+
+    with mlflow.start_run(run_name=run_name):
+        log_tags(stage, model_type, "train/val")
+        log_common_params(artifacts)
+        log_preprocessors(artifacts)
+        log_metrics(results.val.metrics)
+        log_hyperparams(results)
+        log_model(results, model_type)
+        log_plots(results.val, model_type, train_curves=True)
         if model_type == "nn":
-            # Model
-            mlflow.pytorch.log_model(results.model, artifact_path="model")
-
-            # training curves
-            loss_path = plot_train_val(results.train.losses, results.val.losses, "loss_curve.png", 'Loss')
-            mlflow.log_artifact(loss_path)
-            os.remove(loss_path)
-
-
-            acc_path = plot_train_val(results.train.accs, results.val.accs, "acc_curve.png", 'Accuracy')
-            mlflow.log_artifact(acc_path)
-            os.remove(acc_path)  
-        
-        else: # trees
-            mlflow.sklearn.log_model(results.model, name="model")
-
-
-        # hyperparams (differnt dict depending on the model)
-        mlflow.log_params(results.hyperparams)
-
-
-        # Common plots
-        cm_path = plot_cm(results.val.labels, results.val.preds)
-        mlflow.log_artifact(cm_path)
-        os.remove(cm_path)
-
-        roc_path = plot_roc(results.val.labels, results.val.probs)
-        mlflow.log_artifact(roc_path)
-        os.remove(roc_path)
-        
+            log_training_curves(results.train.losses, results.val.losses, "loss_curve.png", 'Loss')
+            log_training_curves(results.train.accs, results.val.accs, "acc_curve.png", 'Accuracy')
 
 
 
@@ -121,6 +172,30 @@ def logging(exp_name, run_name, artifacts, results, model_type):
 
 
 
+#------------------Final evaluation (with test set)-----------------------------
+# log test results (eval!!!!!)
+def log_test_results(exp_name, tuning_run_id, model_type, results, stage='eval'):
+    # ensures artifact path is set
+    mlflow.set_experiment(exp_name)
+    
+    # run
+    with mlflow.start_run(run_name="test_evaluation"):
+        log_tags(stage, model_type, "test", {"tuning_run_id": tuning_run_id})
+        #mlflow.set_tag("tuning_run_id", tuning_run_id)
+        log_metrics(results.metrics)
+        log_plots(results, model_type)
+
+
+
+
+
+
+
+
+
+
+
+#----------------to adapt later--------------------------------------
 # get best model data
 def select_best_model(experiment_name, metric="f1", model_type=None, data_version="v1"):
     """
@@ -198,82 +273,3 @@ def select_best_model(experiment_name, metric="f1", model_type=None, data_versio
 
 
 
-# log test results
-def log_test_results(exp_name, tuning_run_id, model_type, results):
-
-    # ensures artifact path is set
-    mlflow.set_experiment(exp_name)
-    
-    # run
-    with mlflow.start_run(run_name="test_evaluation"):
-
-        # tags
-        mlflow.set_tag("tuning_run_id", tuning_run_id)
-        mlflow.set_tag("dataset", "test")
-        mlflow.set_tag("data_version", "v1")
-
-        mlflow.log_param("model_type", model_type)
-
-        # Metrics (shared)
-        for m in ["accuracy", "precision", "recall", "f1"]:
-            mlflow.log_metric(m, getattr(results.metrics, m))
-
-        # Plots
-        cm_path = plot_cm(results.labels, results.preds)
-        mlflow.log_artifact(cm_path)
-        os.remove(cm_path)
-
-        roc_path = plot_roc(results.labels, results.probs)
-        mlflow.log_artifact(roc_path)
-        os.remove(roc_path)
-
-
-
-
-# analyze perfoemce when i move only one param
-
-
-
-
-
-
-"""
-# Delete the SQLite file
-rm mlflow.db
-
-# Delete all artifacts (by default in ./mlruns/)
-rm -rf mlruns/
-
-# Start MLflow server with SQLite backend
-mlflow server \
-    --backend-store-uri sqlite:///mlflow.db \
-    --default-artifact-root ./mlruns \
-    --host 0.0.0.0 \
-    --port 5000
-
-
-
-# Start MLflow server with SQLite backend
-mlflow server \
-    --backend-store-uri sqlite:///mlflow.db \
-    --default-artifact-root ./mlruns \
-    --host 0.0.0.0 \
-    --port 5000
-
-
-
-"""
-
-
-"""
-Load featiures
-import json
-import mlflow
-
-# Download the artifact
-local_path = mlflow.artifacts.download_artifacts(run_id=<run_id>, artifact_path="features.json")
-
-# Read the features
-with open(local_path) as f:
-    features = json.load(f)
-"""
