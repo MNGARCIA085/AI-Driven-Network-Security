@@ -6,6 +6,7 @@ defaults:
   - model_type: nn
   - preprocessor: preprocessor
   - evaluation: evaluation
+  - tracking: mlflow
   - override hydra/launcher: joblib
 
   

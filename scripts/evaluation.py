@@ -5,9 +5,13 @@ import mlflow
 import os
 import numpy as np
 from omegaconf import DictConfig, OmegaConf
+
+
 from src.preprocessors.factory import PreprocessorFactory 
 from src.inference.factory import PredictorFactory
-from src.utils.logging import log_test_results, select_best_model
+from src.infra.mlflow_config import init_mlflow
+from src.infra.tracking import select_best_model
+from src.infra.logging import log_test_results
 from src.evaluation.base import Evaluator
 from src.utils.results import TestResults, Metrics
 from src.config.data import build_data_config
@@ -15,6 +19,10 @@ from src.config.data import build_data_config
 
 @hydra.main(config_path="../config", config_name="config", version_base=None)
 def main(cfg: DictConfig):
+
+    # 0. init mlflow
+    init_mlflow(cfg.experiment_name)
+
     # 1. Load and preprocess data
     path = cfg.preprocessor.path_test
     df = pd.read_csv(path)
@@ -104,7 +112,7 @@ def main(cfg: DictConfig):
         )
 
     # Logging
-    log_test_results(cfg.experiment_name, tuning_run_id, model_type, results)
+    log_test_results(tuning_run_id, model_type, results)
 
 
 

@@ -1,39 +1,12 @@
-"""
-stage        = train | tune | eval
-model_type   = nn | tree | xgboost | ...
-dataset      = dataset_name_or_version
-task         = binary_classification | multiclass
-
-"""
-
-
-
-
-
-
-
-
 import mlflow
 import mlflow.sklearn
 import joblib
 import os
 import json
-from mlflow.tracking import MlflowClient
-from pathlib import Path
-from .plots import plot_cm, plot_roc, plot_train_val
 from dataclasses import is_dataclass, asdict
 
 
-# Project root (2 levels up from this file)
-root_dir = Path(__file__).resolve().parents[2]
-
-# Tracking DB
-mlflow.set_tracking_uri(f"sqlite:///{root_dir / 'mlflow.db'}")
-
-# Artifacts folder
-artifact_dir = root_dir / "mlruns"
-os.makedirs(artifact_dir, exist_ok=True)
-
+from src.utils.plots import plot_cm, plot_roc, plot_train_val
 
 
 
@@ -150,8 +123,7 @@ def log_training_curves(train_data, val_data, filename, title):
 
 
 # log exp. log_Experiment
-def logging(exp_name, run_name, artifacts, results, model_type, stage):
-    mlflow.set_experiment(exp_name)
+def logging(run_name, artifacts, results, model_type, stage):
 
     with mlflow.start_run(run_name=run_name):
         log_tags(stage, model_type, "train/val")
@@ -168,108 +140,9 @@ def logging(exp_name, run_name, artifacts, results, model_type, stage):
 
 
 
-
-
-
-
 #------------------Final evaluation (with test set)-----------------------------
-# log test results (eval!!!!!)
-def log_test_results(exp_name, tuning_run_id, model_type, results, stage='eval'):
-    # ensures artifact path is set
-    mlflow.set_experiment(exp_name)
-    
-    # run
+def log_test_results(tuning_run_id, model_type, results, stage='eval'):
     with mlflow.start_run(run_name="test_evaluation"):
         log_tags(stage, model_type, "test", {"tuning_run_id": tuning_run_id})
-        #mlflow.set_tag("tuning_run_id", tuning_run_id)
         log_metrics(results.metrics)
         log_plots(results, model_type)
-
-
-
-
-
-
-
-
-
-
-
-#----------------to adapt later--------------------------------------
-# get best model data
-def select_best_model(experiment_name, metric="f1", model_type=None, data_version="v1"):
-    """
-    Select the best model overall or the best one of a specific type.
-    
-    Args:
-        experiment_name (str): Name of the MLflow experiment.
-        metric (str): Metric used for ranking (default: 'f1').
-        model_type (str, optional): Filter by model type (e.g., 'nn' or 'tree').
-        data_version (str): Version tag of the data (default: 'v1').
-
-    Returns:
-        dict: Paths and metadata of the best run.
-    """
-
-    client = MlflowClient()
-    experiment = client.get_experiment_by_name(experiment_name)
-    if experiment is None:
-        raise ValueError(f"Experiment '{experiment_name}' not found.")
-
-    # Build filter
-    filter_str = f"run_name = 'Tuning' AND tags.data_version = '{data_version}'"
-    if model_type:
-        filter_str += f" AND tags.model_type = '{model_type}'"
-
-    # Search runs
-    runs = client.search_runs(
-        experiment_ids=[experiment.experiment_id],
-        filter_string=filter_str,
-        order_by=[f"metrics.{metric} DESC"],
-    )
-
-    if not runs:
-        raise ValueError(f"No runs found for model_type='{model_type}' and data_version='{data_version}'.")
-
-    # Take best run
-    best_run = runs[0]
-    run_id = best_run.info.run_id
-
-    print(f"Best {model_type or 'overall'} run ID: {run_id}")
-    print(f"Best {metric.upper()}: {best_run.data.metrics[metric]:.4f}")
-
-    # Common part
-    model_uri = f"runs:/{run_id}/model"
-    encoder_path = mlflow.artifacts.download_artifacts(
-        run_id=run_id, artifact_path="preprocessor/label_encoder.pkl"
-    )
-
-
-    model_type = best_run.data.tags.get("model_type")
-
-    # NN models include scaler
-    if model_type == "nn":
-        scaler_path = mlflow.artifacts.download_artifacts(
-            run_id=run_id, artifact_path="preprocessor/scaler.pkl"
-        )
-        return {
-            "run_id": run_id,
-            "model_type": model_type,
-            "model_uri": model_uri,
-            "scaler_path": scaler_path,
-            "encoder_path": encoder_path,
-        }
-
-    # Tree models
-    return {
-        "run_id": run_id,
-        "model_type": model_type,
-        "model_uri": model_uri,
-        "encoder_path": encoder_path,
-    }
-
-
-
-
-
-

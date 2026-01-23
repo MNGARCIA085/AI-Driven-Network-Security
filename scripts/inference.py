@@ -4,21 +4,32 @@ import mlflow
 import joblib
 import pandas as pd
 from omegaconf import DictConfig
-from src.utils.logging import select_best_model
+
+
+
+from src.infra.mlflow_config import init_mlflow
+from src.infra.tracking import select_best_model
 from src.preprocessors.factory import PreprocessorFactory 
 from src.inference.factory import PredictorFactory
 from src.config.data import build_data_config
 
 
+
+
+
+
 @hydra.main(config_path="../config", config_name="config", version_base=None)
 def main(cfg: DictConfig):
+
+    # init mlflow
+    init_mlflow(cfg.experiment_name)
 
     # load inference data
     path = cfg.preprocessor.path_inference
     df = pd.read_csv(path)
 
     # Load data from the best run
-    #results = select_best_model("nn_experiment", model_type = "nn")
+    #results = select_best_model("nn_experiment", model_type = "nn") if i include bets x per model_type
     results = select_best_model(cfg.experiment_name)
     model_type = results["model_type"]
 

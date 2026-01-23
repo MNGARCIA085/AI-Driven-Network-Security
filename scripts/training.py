@@ -5,7 +5,11 @@ from src.preprocessors.factory import PreprocessorFactory
 from src.training.factory import TrainerFactory
 from src.inference.factory import PredictorFactory
 from src.evaluation.base import Evaluator
-from src.utils.logging import logging
+
+
+from src.infra.mlflow_config import init_mlflow
+from src.infra.logging import logging
+
 from src.config.data import build_data_config
 
 
@@ -13,6 +17,9 @@ from src.config.data import build_data_config
 
 @hydra.main(config_path="../config", config_name="config", version_base=None)
 def main(cfg: DictConfig):
+
+    # init mlflow
+    init_mlflow(cfg.experiment_name)
 
     # get model type (nn, tree.....)
     model_type = cfg.model_type.name
@@ -77,7 +84,7 @@ def main(cfg: DictConfig):
 
 
     #-------------Logging --------------------------------
-    logging(cfg.experiment_name, 'Training', artifacts, results, model_type, 'train')
+    logging('Training', artifacts, results, model_type, 'train')
 
 
 

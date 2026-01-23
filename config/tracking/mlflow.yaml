@@ -1,0 +1,2 @@
+tracking_uri: "sqlite:///${hydra:runtime.cwd}/mlflow.db"
+artifact_location: "${hydra:runtime.cwd}/mlruns"

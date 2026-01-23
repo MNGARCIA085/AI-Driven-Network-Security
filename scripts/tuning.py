@@ -3,7 +3,12 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 from src.preprocessors.factory import PreprocessorFactory
 from src.tuning.factory import TunerFactory
-from src.utils.logging import logging
+
+
+
+from src.infra.mlflow_config import init_mlflow
+from src.infra.logging import logging
+
 from src.training.factory import TrainerFactory
 from src.utils.config_utils import unflatten_config
 from src.inference.factory import PredictorFactory
@@ -15,6 +20,9 @@ from src.config.tuning.factory import build_tuning_config
 
 @hydra.main(config_path="../config", config_name="config", version_base=None)
 def main(cfg: DictConfig):
+
+    # init mlflow
+    init_mlflow(cfg.experiment_name)
 
 
     # get model type (nn, tree.....)
@@ -94,7 +102,7 @@ def main(cfg: DictConfig):
 
 
     # ---------------- 5. Logging --------------------
-    logging(cfg.experiment_name, 'Tuning', artifacts, results, model_type, 'tune')
+    logging('Tuning', artifacts, results, model_type, 'tune')
 
 
 
