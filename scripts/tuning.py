@@ -1,20 +1,17 @@
 import os
 import hydra
 from omegaconf import DictConfig, OmegaConf
-from src.preprocessors.factory import PreprocessorFactory
-from src.tuning.factory import TunerFactory
 
-
-
-from src.infra.mlflow_config import init_mlflow
-from src.infra.logging import logging
-
-from src.training.factory import TrainerFactory
-from src.utils.config_utils import unflatten_config
-from src.inference.factory import PredictorFactory
-from src.evaluation.base import Evaluator
-from src.config.data import build_data_config
-from src.config.tuning.factory import build_tuning_config
+from net_security.preprocessors.factory import PreprocessorFactory
+from net_security.tuning.factory import TunerFactory
+from net_security.infra.config import init_mlflow
+from net_security.infra.logging import logging
+from net_security.training.factory import TrainerFactory
+from net_security.utils.config_utils import unflatten_config
+from net_security.inference.factory import PredictorFactory
+from net_security.evaluation.base import Evaluator
+from net_security.preprocessors.config import build_data_config
+from net_security.tuning.config.factory import build_tuning_config
 
 
 

@@ -1,4 +1,4 @@
-from src.training.nn import NNTrainer
+from net_security.training.nn import NNTrainer
 
 
 def test_nn_trainer_train(dummy_data):

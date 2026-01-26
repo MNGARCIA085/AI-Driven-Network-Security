@@ -7,9 +7,9 @@ from .base import BaseTuner
 from ray import tune
 from ray.tune.schedulers import ASHAScheduler
 
-from src.models.nnet import NNModel
-from src.utils.results import Results, Metrics
-from src.training.nn import NNTrainer
+from net_security.models.nnet import NNModel
+from net_security.utils.results import Results, Metrics
+from net_security.training.nn import NNTrainer
 
 
 

@@ -1,4 +1,4 @@
-from src.preprocessors.factory import PreprocessorFactory
+from net_security.preprocessors.factory import PreprocessorFactory
 
 
 def test_tree_preprocessor_basic(small_df, data_cfg_tree, monkeypatch):

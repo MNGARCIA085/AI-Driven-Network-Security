@@ -4,11 +4,12 @@ from sklearn.tree import DecisionTreeClassifier
 import numpy as np
 import ray
 from .base import BaseTuner
-from src.models.tree import TreeModel
-from src.utils.results import Results, Metrics
 
-from src.inference.tree import TreePredictor
-from src.evaluation.base import Evaluator
+
+from net_security.models.tree import TreeModel
+from net_security.utils.results import Results, Metrics
+from net_security.inference.tree import TreePredictor
+from net_security.evaluation.base import Evaluator
 
 
 class TreeTuner(BaseTuner):

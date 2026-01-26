@@ -2,7 +2,8 @@ import ray
 from abc import ABC, abstractmethod
 from ray import tune
 from ray.tune.schedulers import ASHAScheduler
-from src.utils.results import Results, Metrics
+
+from net_security.utils.results import Results, Metrics
 
 
 
@@ -68,6 +69,7 @@ class BaseTuner(): # ABC
             tune_config=tune.TuneConfig(
                 scheduler=scheduler,
                 num_samples=self.cfg.num_samples,
+                max_concurrent_trials=2,  # or 1
             ),
         )
 

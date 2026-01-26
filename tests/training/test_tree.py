@@ -1,4 +1,4 @@
-from src.training.tree import TreeTrainer
+from net_security.training.tree import TreeTrainer
 
 
 def test_tree_trainer_train(dummy_data):

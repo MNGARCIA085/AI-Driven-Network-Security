@@ -1,7 +1,7 @@
 import pytest
 import torch
 import torch.nn as nn
-from src.models.nnet import NNModel
+from net_security.models.nnet import NNModel
 
 
 def test_nn_model_forward():

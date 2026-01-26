@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.preprocessing import LabelEncoder, StandardScaler, MinMaxScaler, RobustScaler, Normalizer
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
-from src.config.data import DataConfig
+from .config import DataConfig
 
 
 

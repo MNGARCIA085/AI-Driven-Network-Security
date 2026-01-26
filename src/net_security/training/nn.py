@@ -3,17 +3,11 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 import numpy as np
-
 from .base import BaseTrainer
-
-
-
-from src.models.nnet import NNModel
-from src.utils.results import Results, Metrics
 from .callbacks import EarlyStopping,LRReducer
-
-
-from src.evaluation.base import Evaluator
+from net_security.models.nnet import NNModel
+from net_security.utils.results import Results, Metrics
+from net_security.evaluation.base import Evaluator
 
 
 class NNTrainer(BaseTrainer):

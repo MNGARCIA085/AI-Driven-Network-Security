@@ -1,6 +1,6 @@
 import pytest
 import torch
-from src.training.callbacks import EarlyStopping, LRReducer
+from net_security.training.callbacks import EarlyStopping, LRReducer
 
 # ------------------------
 # EarlyStopping tests

@@ -7,14 +7,14 @@ import numpy as np
 from omegaconf import DictConfig, OmegaConf
 
 
-from src.preprocessors.factory import PreprocessorFactory 
-from src.inference.factory import PredictorFactory
-from src.infra.mlflow_config import init_mlflow
-from src.infra.tracking import select_best_model
-from src.infra.logging import log_test_results
-from src.evaluation.base import Evaluator
-from src.utils.results import TestResults, Metrics
-from src.config.data import build_data_config
+from net_security.preprocessors.factory import PreprocessorFactory 
+from net_security.inference.factory import PredictorFactory
+from net_security.infra.config import init_mlflow
+from net_security.infra.tracking import select_best_model
+from net_security.infra.logging import log_test_results
+from net_security.evaluation.base import Evaluator
+from net_security.utils.results import TestResults, Metrics
+from net_security.preprocessors.config import build_data_config
 
 
 @hydra.main(config_path="../config", config_name="config", version_base=None)

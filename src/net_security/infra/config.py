@@ -6,7 +6,7 @@ from pathlib import Path
 
 def init_mlflow(exp_name):
     # Project root (2 levels up from this file)
-    root_dir = Path(__file__).resolve().parents[2]
+    root_dir = Path(__file__).resolve().parents[3]
 
     # Tracking DB
     mlflow.set_tracking_uri(f"sqlite:///{root_dir / 'mlflow.db'}")

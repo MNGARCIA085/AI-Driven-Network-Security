@@ -1,5 +1,5 @@
 from sklearn.preprocessing import StandardScaler, LabelEncoder
-from src.preprocessors.factory import PreprocessorFactory
+from net_security.preprocessors.factory import PreprocessorFactory
 
 def test_load_artifacts_sets_attributes(data_cfg_nn):
     preprocessor = PreprocessorFactory.get_preprocessor(

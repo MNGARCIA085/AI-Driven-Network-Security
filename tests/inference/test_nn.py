@@ -1,6 +1,6 @@
-from src.inference.nn import NNPredictor
 import torch
 import numpy as np
+from net_security.inference.nn import NNPredictor
 
 
 class DummyNN(torch.nn.Module):

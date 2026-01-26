@@ -1,6 +1,6 @@
-from src.evaluation.base import Evaluator
 import numpy as np
 from sklearn.metrics import accuracy_score, f1_score, recall_score, precision_score
+from net_security.evaluation.base import Evaluator
 
 # ------------------------
 # Basic Evaluator test

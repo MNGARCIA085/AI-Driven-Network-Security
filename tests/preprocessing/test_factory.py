@@ -1,4 +1,4 @@
-from src.preprocessors.factory import PreprocessorFactory
+from net_security.preprocessors.factory import PreprocessorFactory
 
 def test_factory_returns_nn_preprocessor(data_cfg_nn):
     prep = PreprocessorFactory.get_preprocessor("nn", data_cfg_nn)

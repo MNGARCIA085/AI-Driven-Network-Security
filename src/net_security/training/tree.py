@@ -1,9 +1,9 @@
-
 from sklearn.tree import DecisionTreeClassifier
 import numpy as np
 from .base import BaseTrainer
-from src.models.tree import TreeModel
-from src.utils.results import Results
+
+from net_security.models.tree import TreeModel
+from net_security.utils.results import Results
 
 
 

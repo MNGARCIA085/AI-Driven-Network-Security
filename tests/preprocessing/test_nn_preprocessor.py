@@ -1,5 +1,6 @@
-from src.preprocessors.factory import PreprocessorFactory
 import numpy as np
+from net_security.preprocessors.factory import PreprocessorFactory
+
 
 def test_nn_preprocessor_fit_and_transform(small_df, data_cfg_nn, monkeypatch):
     # monkeypatch the CSV load if needed

@@ -5,11 +5,11 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier
 
 
-from src.training.nn import NNTrainer
-from src.training.tree import TreeTrainer
-from src.inference.nn import NNPredictor
-from src.inference.tree import TreePredictor
-from src.evaluation.base import Evaluator
+from net_security.training.nn import NNTrainer
+from net_security.training.tree import TreeTrainer
+from net_security.inference.nn import NNPredictor
+from net_security.inference.tree import TreePredictor
+from net_security.evaluation.base import Evaluator
 
 
 

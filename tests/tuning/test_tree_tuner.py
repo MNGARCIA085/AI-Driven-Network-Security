@@ -1,5 +1,5 @@
 from unittest.mock import patch
-from src.tuning.tree import TreeTuner
+from net_security.tuning.tree import TreeTuner
 
 def test_tree_tuner_init(dummy_data, tree_tuning_cfg):
     X_train, y_train, X_val, y_val = dummy_data

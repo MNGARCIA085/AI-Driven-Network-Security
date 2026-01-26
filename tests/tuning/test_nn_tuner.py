@@ -1,5 +1,5 @@
 from unittest.mock import patch
-from src.tuning.nn import NNTuner
+from net_security.tuning.nn import NNTuner
 
 
 def test_nn_tuner_init(dummy_data, nn_tuning_cfg):

@@ -6,8 +6,6 @@ import numpy as np
 import os
 
 from hydra.utils import to_absolute_path
-
-
 from hydra.core.hydra_config import HydraConfig
 
 

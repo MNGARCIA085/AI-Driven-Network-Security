@@ -2,7 +2,7 @@
 import pytest
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier
-from src.models.tree import TreeModel
+from net_security.models.tree import TreeModel
 
 
 def test_tree_model_basic():

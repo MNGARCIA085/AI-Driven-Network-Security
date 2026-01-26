@@ -1,6 +1,6 @@
-from src.inference.tree import TreePredictor
 from sklearn.tree import DecisionTreeClassifier
 import numpy as np
+from net_security.inference.tree import TreePredictor
 
 
 def test_tree_predictor_single_and_batch(dummy_X, dummy_y, dummy_encoder):

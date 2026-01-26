@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import pytest
 from sklearn.preprocessing import LabelEncoder
-from src.config.data import DataConfig
+from net_security.preprocessors.config import DataConfig
 
 
 

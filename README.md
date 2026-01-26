@@ -20,12 +20,22 @@ venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Install the project package (src layout)
+pip install -e .
 ```
 
 
-#### 2. Run the main pipeline
+### 2. Running individual scripts
+
+You can execute any module in the scripts/ directory directly and override parameters from the command line:
+
 
 ```bash
+python -m scripts.training -m model_type=tree,nn
+python -m scripts.tuning model_type=nn model_type.tuning.num_samples=3
+python -m scripts.inference
+python -m scripts.evaluation
 python -m scripts.pipeline
 ```
 
@@ -50,25 +60,37 @@ docker run -it -v $(pwd)/mlruns:/app/mlruns ml_env:latest
 ```
 
 
-### Running individual scripts
-
-You can execute any module in the scripts/ directory directly and override parameters from the command line:
+### MLFLow
 
 
-```bash
-python -m scripts.tuning model_type=nn tuning.batch_size=64 tuning.epochs=5
+#### Run server
 ```
-
-
-mlflow server \
+...$ mlflow server \
     --backend-store-uri sqlite:///mlflow.db \
     --default-artifact-root ./mlruns \
-    --host 0.0.0.0 \
+    --host localhost \
     --port 5000
+```
 
-
-# Delete the SQLite file
+#### Delete the SQLite file
+```
 rm mlflow.db
+```
 
-# Delete all artifacts (by default in ./mlruns/)
+#### Delete all artifacts (by default in ./mlruns/)
+```
 rm -rf mlruns/
+```
+
+### References
+
+The CICIDS2017 dataset consists of labeled network flows, including full packet payloads in pcap format, the corresponding profiles and the labeled flows (GeneratedLabelledFlows.zip) and CSV files for machine and deep learning purpose (MachineLearningCSV.zip) are publicly available for researchers. [Link](https://www.unb.ca/cic/datasets/ids-2017.html)
+
+Iman Sharafaldin, Arash Habibi Lashkari, and Ali A. Ghorbani, “Toward Generating a New Intrusion Detection Dataset and Intrusion Traffic Characterization”, 4th International Conference on Information Systems Security and Privacy (ICISSP), Portugal, January 2018.
+
+
+**Note**. Given the restricted resources and the fact that this is a portfolio project, I will use a subset of the ICS Dataset.
+
+
+
+
