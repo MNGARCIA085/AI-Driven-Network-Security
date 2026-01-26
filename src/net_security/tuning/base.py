@@ -7,9 +7,9 @@ from net_security.utils.results import Results, Metrics
 
 
 
-class BaseTuner(): # ABC
+class BaseTuner(ABC): 
     """
-    Abstract base class for Ray Tune-based hyperparameter tuning.
+    Base class for Ray Tune-based hyperparameter tuning.
     Handles Ray object storage, generic tune(), and metric averaging.
     """
 

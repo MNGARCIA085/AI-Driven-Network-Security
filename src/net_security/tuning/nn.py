@@ -16,8 +16,6 @@ from net_security.training.nn import NNTrainer
 class NNTuner(BaseTuner):
     def __init__(self, cfg, X_train, y_train, X_val, y_val, num_classes):
         super().__init__(cfg, X_train, y_train, X_val, y_val, num_classes) # parent class owns them
-        
-        #self.num_classes = num_classes
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
 

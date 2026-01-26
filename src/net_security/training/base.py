@@ -6,7 +6,7 @@ from net_security.utils.results import Results, Metrics
 
 
 
-class BaseTrainer():
+class BaseTrainer(ABC):
     """
     Base class for training models.
 

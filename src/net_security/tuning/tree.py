@@ -15,8 +15,6 @@ from net_security.evaluation.base import Evaluator
 class TreeTuner(BaseTuner):
     def __init__(self, cfg, X_train, y_train, X_val, y_val, num_classes):
         super().__init__(cfg, X_train, y_train, X_val, y_val, num_classes) 
-        #self.num_classes = num_classes # maybe to parent later!!!!
-
 
     # get tune config
     def get_tune_config(self):
