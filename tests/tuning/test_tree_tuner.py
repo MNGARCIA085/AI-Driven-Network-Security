@@ -17,6 +17,6 @@ def test_tree_tuner_tune(mock_fit, dummy_data, tree_tuning_cfg):
     
     X_train, y_train, X_val, y_val = dummy_data
     tuner = TreeTuner(tree_tuning_cfg, X_train, y_train, X_val, y_val, num_classes=2)
-    best_cfg = tuner.tune()
+    best_cfg, all_res = tuner.tune()
     
     assert best_cfg["model.criterion"] == "gini"

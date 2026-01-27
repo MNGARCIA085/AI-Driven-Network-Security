@@ -18,6 +18,6 @@ def test_nn_tuner_tune(mock_fit, dummy_data, nn_tuning_cfg):
     mock_fit.return_value.get_best_result.return_value.config = {"model.hidden1":4}
     X_train, y_train, X_val, y_val = dummy_data
     tuner = NNTuner(nn_tuning_cfg, X_train, y_train, X_val, y_val, num_classes=2)
-    best_cfg = tuner.tune()
+    best_cfg, all_res = tuner.tune()
     
     assert best_cfg["model.hidden1"] == 4
