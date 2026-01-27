@@ -42,19 +42,10 @@ def log_preprocessors(artifacts):
     mlflow.log_dict(artifacts["class_dist_before_smote"], "class_dist_before_smote.json")
     mlflow.log_dict(artifacts["class_dist_after_smote"], "class_dist_after_smote.json")
 
-
     # encoder
-
-    #out_dir = HydraConfig.get().runtime.output_dir
-    #save_path = os.path.join(out_dir, plot_name)
-
-
     encoder = artifacts["encoder"]
-    
-    #filename = "label_encoder.pkl"
     out_dir = HydraConfig.get().runtime.output_dir
     filename = os.path.join(out_dir, "label_encoder.pkl")
-    
 
     joblib.dump(encoder, filename)
     mlflow.log_artifact(filename, artifact_path="preprocessor")
@@ -65,10 +56,6 @@ def log_preprocessors(artifacts):
 
     # scaler (only for NNs)
     if artifacts.get("scaler") is not None:
-        
-        #filename = "scaler.pkl"
-        
-
         out_dir = HydraConfig.get().runtime.output_dir
         filename = os.path.join(out_dir, "scaler.pkl")
 
@@ -134,11 +121,18 @@ def log_training_curves(train_data, val_data, filename, title):
 
 
 
-# later -> add tuning trials!!!
+# log tuning trials
+def log_tuning_trials(trials):
+    """trials -> df"""
+    out_dir = HydraConfig.get().runtime.output_dir
+    filename = os.path.join(out_dir, "tuning_results.csv")
+    trials.to_csv(filename, index=False)
+    mlflow.log_artifact(filename)
+
 
 
 # log exp. log_Experiment
-def logging(run_name, artifacts, results, model_type, stage):
+def logging(run_name, artifacts, results, model_type, stage, trials=None):
 
     with mlflow.start_run(run_name=run_name):
         log_tags(stage, model_type, "train/val")
@@ -151,6 +145,8 @@ def logging(run_name, artifacts, results, model_type, stage):
         if model_type == "nn":
             log_training_curves(results.train.losses, results.val.losses, "loss_curve.png", 'Loss')
             log_training_curves(results.train.accs, results.val.accs, "acc_curve.png", 'Accuracy')
+        if stage == 'tune':
+            log_tuning_trials(trials)
 
 
 

@@ -1,0 +1,2 @@
+f1,trial_id,config/model.criterion,config/model.max_depth,config/model.min_samples_split,logdir
+0.9810826800682008,410f6_00000,entropy,8,2,410f6_00000

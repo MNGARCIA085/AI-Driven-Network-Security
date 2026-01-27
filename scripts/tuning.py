@@ -54,7 +54,7 @@ def main(cfg: DictConfig):
         preprocessor=preprocessor,
     ) # returns for ex NNTuner(cfg_tuning, X_train, y_train, X_val, y_val, num_classes) or TreeTuner...
 
-    best_config = tuner.tune()
+    best_config, all_results = tuner.tune()
     print(best_config)
     config = unflatten_config(best_config)
 
@@ -99,7 +99,7 @@ def main(cfg: DictConfig):
 
 
     # ---------------- 5. Logging --------------------
-    logging('Tuning', artifacts, results, model_type, 'tune')
+    logging('Tuning', artifacts, results, model_type, 'tune', all_results)
 
 
 

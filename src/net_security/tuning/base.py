@@ -23,6 +23,31 @@ class BaseTuner(ABC):
 
 
     # ---------------- Methods ---------------- #
+    def _clean_df(self, df):
+        aux = df.copy()
+        DROP_PREFIXES = (
+            "timestamp",
+            "checkpoint_",
+            "time_",
+            "iterations_",
+            "training_",
+        )
+
+        DROP_EXACT = {
+            "done", "date", "pid", "hostname", "node_ip"
+        }
+
+        cols_to_drop = [
+            c for c in df.columns
+            if c.startswith(DROP_PREFIXES) or c in DROP_EXACT
+        ]
+
+        df_clean = aux.drop(columns=cols_to_drop)
+
+        return df_clean
+
+
+
     @staticmethod
     def train_model_ray(config, X_train_id, y_train_id, X_val_id, y_val_id, average, num_classes): # full signature or use config 
         """Train one model configuration for Ray Tune."""
@@ -75,8 +100,15 @@ class BaseTuner(ABC):
 
 
         results = tuner.fit()
+
+        # best config
         best = results.get_best_result(metric="f1", mode="max")
-        return best.config
+
+        # all results
+        df = results.get_dataframe()
+        df_clean = self._clean_df(df)
+
+        return best.config, df_clean
 
 
 
