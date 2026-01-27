@@ -81,7 +81,7 @@ def main(cfg: DictConfig):
     # Preprocess data
     data_cfg = build_data_config(cfg.preprocessor, cfg)
     preprocessor = PreprocessorFactory.get_preprocessor(model_type, data_cfg)
-    preprocessor.load_artifacts(artifacts) # note -> trees doesnt really needs it
+    preprocessor.load_artifacts(artifacts)
     X_values = preprocessor.preprocess_inference(**data_prep)
 
     # get predictor

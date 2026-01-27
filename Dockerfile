@@ -1,40 +1,39 @@
-# Use Debian base from Google's Docker Hub mirror
-# Dockerfile
-FROM python:3.11-slim
+# ---------- Builder stage ----------
+FROM python:3.11-slim AS builder
 
-# System dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
+WORKDIR /build
+
+# Install deps first (better cache)
+COPY requirements.txt .
+RUN pip install --upgrade pip \
+    && pip wheel --no-cache-dir --wheel-dir /wheels -r requirements.txt
+
+# Build your package wheel
+COPY pyproject.toml .
+COPY src/ src/
+RUN pip wheel --no-cache-dir --wheel-dir /wheels .
+
+
+# ---------- Runtime stage ----------
+FROM python:3.11-slim
+
 WORKDIR /app
 
-# Copy only what is needed for training
-COPY requirements.txt .
-RUN python3.11 -m pip install --no-cache-dir -r requirements.txt
+# Install runtime deps only
+COPY --from=builder /wheels /wheels
+RUN pip install --no-cache-dir /wheels/* \
+    && rm -rf /wheels
 
-# Copy project code
-COPY config/ config
-COPY tests/ tests
-COPY src/ src/
-COPY scripts/ scripts/
+# Copy only what is needed at runtime
 COPY data/ data/
-COPY notebooks/ notebooks/
+COPY scripts/ scripts/
+COPY config/ config/
+COPY tests/ tests/
 
-# Environment variables
 ENV PYTHONUNBUFFERED=1
 
 CMD ["bash"]
-
-
-
-
-#docker build -f Dockerfile -t ml_env:latest .
-#docker run -it -v $(pwd)/mlruns:/app/mlruns ml_env:latest 
-
-
-
-
-
-
-
