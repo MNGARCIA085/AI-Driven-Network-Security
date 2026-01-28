@@ -1,6 +1,6 @@
 import os
 import hydra
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
 
 from net_security.preprocessors.factory import PreprocessorFactory
 from net_security.training.factory import TrainerFactory
@@ -33,15 +33,13 @@ def main(cfg: DictConfig):
     trainer = TrainerFactory.get_trainer(
         model_type=model_type,
         num_classes=preprocessor.num_classes,
-        average='weighted',
+        average=cfg.evaluation.metrics.average,
     )
 
     # config
-    model_config = OmegaConf.load(f"config/models/{model_type}.yaml")
-    train_config = OmegaConf.load(f"config/training/{model_type}.yaml")
     config = {
-        "model": model_config,
-        "training": train_config
+        "model": cfg.model_type.models,
+        "training": cfg.model_type.training
     }
     
     # model_config, training_config...............

@@ -1,6 +1,6 @@
 import os
 import hydra
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
 
 from net_security.preprocessors.factory import PreprocessorFactory
 from net_security.tuning.factory import TunerFactory
@@ -34,6 +34,7 @@ def main(cfg: DictConfig):
 
     # ----------- 2. Tuning--------------------------
     """
+    from omegaconf import DictConfig, OmegaConf
     cfg_tuning = OmegaConf.load(f"config/tuning/{model_type}.yaml") # 
         uses tuning/nn.yaml or tuning/tree.yaml....
         hydra does not overrides this

@@ -34,6 +34,7 @@ You can execute any module in the scripts/ directory directly and override param
 ```bash
 python -m scripts.training -m model_type=tree,nn
 python -m scripts.tuning model_type=nn model_type.tuning.num_samples=3
+python -m scripts.tuning -m model_type=nn,tree
 python -m scripts.inference
 python -m scripts.evaluation
 python -m scripts.pipeline
